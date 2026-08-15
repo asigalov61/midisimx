@@ -1,5 +1,5 @@
 # midisimx
-## Greately improved, enhanced and streamlined fork of midisim for calculating, searching, and analyzing MIDI-to-MIDI similarity at scale
+## Greatly improved, enhanced, and streamlined fork of midisim for calculating, searching, and analyzing MIDI-to-MIDI similarity at scale
 
 <img width="1536" height="1024" alt="midisimx" src="https://github.com/user-attachments/assets/a3e8506d-bf53-4c36-9977-5fd8a6050e6c" />
 
