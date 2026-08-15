@@ -1,7 +1,7 @@
-# midisim
-## Calculate, search, and analyze MIDI-to-MIDI similarity at scale
+# midisimx
+## Greately improved, enhanced and streamlined fork of midisim for calculating, searching, and analyzing MIDI-to-MIDI similarity at scale
 
-<img width="1536" height="1024" alt="midisim" src="https://github.com/user-attachments/assets/0b379b3a-ec9f-42c7-ba09-6b7cce87a338" />
+<img width="1536" height="1024" alt="midisimx" src="https://github.com/user-attachments/assets/a3e8506d-bf53-4c36-9977-5fd8a6050e6c" />
 
 ***
 
@@ -84,7 +84,7 @@
 ### midisim PyPI package (for general use)
 
 ```sh
-!pip install -U midisim
+!pip install -U midisimx
 ```
 
 ### x-transformers 2.3.1 (for raw/custom tasks)
