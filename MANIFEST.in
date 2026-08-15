@@ -1,0 +1,5 @@
+include midisimx/README.md
+recursive-include midisimx/ *
+recursive-include midisimx/models *
+recursive-include midisimx/embeddings *
+recursive-include midisimx/artwork *
