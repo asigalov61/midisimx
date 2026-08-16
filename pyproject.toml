@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "midisimx"
-version = "26.8.21"
+version = "26.8.24"
 description = "Calculate, search, and analyze MIDI-to-MIDI similarity at scale"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
@@ -17,7 +17,6 @@ maintainers = [
 dependencies = [
   "tqdm",
   "ipywidgets",
-  "hf-transfer",
   "huggingface_hub",
   "torch",
   "einops",
@@ -26,6 +25,7 @@ dependencies = [
   "matplotlib",
   "networkx",
   "scipy",
+  "scikit-learn",
   "numpy"
 ]
 
