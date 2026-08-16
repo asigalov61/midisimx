@@ -98,15 +98,15 @@ print('=' * 70)
 
 ###################################################################################
 
-def download_all_embeddings(repo_id: str = 'projectlosangeles/midisim-embeddings',
+def download_all_embeddings(repo_id: str = 'projectlosangeles/midisimx-embeddings',
                             revision: str = 'main',
-                            local_dir: str = './midisim-embeddings/',
+                            local_dir: str = './midisimx-embeddings/',
                             verbose: bool = True,
                             **kwargs: dict[str, Any]
                            ) -> str:
 
     """
-    Helper function that downloads all pre-computed midisim embeddings from Hugging Face
+    Helper function that downloads all pre-computed midisimx embeddings from Hugging Face
     
     Returns
     -------
@@ -134,15 +134,15 @@ def download_all_embeddings(repo_id: str = 'projectlosangeles/midisim-embeddings
 
 ###################################################################################
 
-def download_embeddings(repo_id: str = 'projectlosangeles/midisim-embeddings',
-                        filename: str = 'discover_midi_dataset_37292_genres_midis_embeddings_cc_by_nc_sa.npy',
-                        local_dir: str = './midisim-embeddings/',
+def download_embeddings(repo_id: str = 'projectlosangeles/midisimx-embeddings',
+                        filename: str = 'lakh_midi_dataset_17203_clean_midis_embeddings_1_2_1_2_weighted_cc_by_nc_sa.npy',
+                        local_dir: str = './midisimx-embeddings/',
                         verbose: bool = True,
                         **kwargs: dict[str, Any]
                        ) -> str:
     
     """
-    Helper function that downloads pre-computed midisim embeddings files from Hugging Face
+    Helper function that downloads pre-computed midisimx embeddings files from Hugging Face
     
     Returns
     -------
@@ -212,7 +212,8 @@ def load_model(model_path: str = './midisimx-models/midisimx_trained_model_14391
                pad_idx: int = 719,
                dtype: torch.dtype = torch.bfloat16,
                device: str = 'cuda',
-               compile_model: bool = 'True',
+               compile_model: bool = False,
+               dynamic_compile: bool = True,
                verbose: bool = True
               ) -> str:
 
@@ -355,7 +356,7 @@ def load_model(model_path: str = './midisimx-models/midisimx_trained_model_14391
     if compile_model:
         if verbose:
             print('Compiling model...')
-        model = torch.compile(model)
+        model = torch.compile(model, dynamic=dynamic_compile)
         
     model.eval()
 
@@ -370,7 +371,7 @@ def load_model(model_path: str = './midisimx-models/midisimx_trained_model_14391
 
 ###################################################################################
 
-def load_embeddings(embeddings_path: str = './midisim-embeddings/discover_midi_dataset_37292_genres_midis_embeddings_cc_by_nc_sa.npy',
+def load_embeddings(embeddings_path: str = './midisimx-embeddings/lakh_midi_dataset_17203_clean_midis_embeddings_1_2_1_2_weighted_cc_by_nc_sa.npy',
                     midi_names_key: str = 'midi_names',
                     midi_embeddings_key: str = 'midi_embeddings',
                     verbose: bool = True
