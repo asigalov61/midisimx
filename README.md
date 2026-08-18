@@ -155,7 +155,7 @@ DEVICE = 'cuda' # You can use any compatible device or CPU
 DTYPE  = torch.bfloat16 # Original training dtype
 
 # Official main midisimx model checkpoint name
-MODEL_CKPT = 'midisim_large_pre_trained_model_2_epochs_86275_steps_0.2054_loss_0.9385_acc.pth'
+MODEL_CKPT = 'midisimx_trained_model_14391_steps_0.255_loss_0.9036_acc.pth'
 
 # Model architecture using x-transformers
 model = TransformerWrapper(
@@ -266,24 +266,13 @@ discovermidi.download_dataset()
 fast_parallel_extract.fast_parallel_extract()
 ```
 
-### Choose and prepare one midisimx model and corresponding embeddings set
-
-#### Small model (8 layers)
+### Prepare midisimx model and desired corresponding embeddings set
 
 ```python
-model_ckpt = 'midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth'
-model_depth = 8
-
-embeddings_file = 'discover_midi_dataset_3480123_clean_midis_embeddings_cc_by_nc_sa.npy'
-```
-
-#### Large model (16 layers)
-
-```python
-model_ckpt = 'midisim_large_pre_trained_model_2_epochs_86275_steps_0.2054_loss_0.9385_acc.pth'
+model_ckpt = 'midisimx_trained_model_14391_steps_0.255_loss_0.9036_acc.pth'
 model_depth = 16
 
-embeddings_file = 'discover_midi_dataset_3480123_clean_midis_embeddings_large_cc_by_nc_sa.npy'
+embeddings_file = 'discover_midi_dataset_3267574_clean_midis_embeddings_1_2_1_2_weighted_cc_by_nc_sa.npy'
 ```
 
 ### Create Master MIDI dataset directory and upload your source/master MIDIs in it
