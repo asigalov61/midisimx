@@ -411,9 +411,9 @@ for fa in tqdm.tqdm(filez):
 
 ## Limitations
 
-* Current code and models support only MIDI music elements similarity (start-times, durations and pitches)
-* MIDI channels, instruments, velocities and drums similarites are not currently supported due to complexity and practicality considerations
-* Current pre-trained models are limited by 3k sequence length (~1000 MIDI music notes) so long running MIDIs can only be analyzed in chunks
+* Current code and models support only MIDI music elements similarity (start-times, durations, pitches and chords)
+* MIDI channels, instruments, velocities and drum similarites are not currently supported due to complexity and practicality considerations
+* Current model is limited by 3k sequence length (~1000 MIDI music notes) so long running MIDIs can only be analyzed in chunks
 * Solo drum track MIDIs are not currently supported and can't be analyzed
 
 ***
