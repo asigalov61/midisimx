@@ -138,8 +138,6 @@ out_dir_path = midisimx.copy_corpus_files(corpus_matches_list)
 
 ### Raw/custom use example
 
-#### Small model (8 layers - 2 epochs)
-
 ```python
 import torch
 from x_transformers import TransformerWrapper, Encoder
@@ -147,52 +145,9 @@ from x_transformers import TransformerWrapper, Encoder
 # Original model hyperparameters
 SEQ_LEN = 3072
 
-MASK_IDX     = 384 # Use this value for masked modelling
-PAD_IDX      = 385 # Model pad index
-VOCAB_SIZE   = 386 # Total vocab size
-
-MASK_PROB    = 0.15 # Original training mask probability value (use for masked modelling)
-
-DEVICE = 'cuda' # You can use any compatible device or CPU
-DTYPE  = torch.bfloat16 # Original training dtype
-
-# Official main midisimx model checkpoint name
-MODEL_CKPT = 'midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth'
-
-# Model architecture using x-transformers
-model = TransformerWrapper(
-    num_tokens = VOCAB_SIZE,
-    max_seq_len = SEQ_LEN,
-    attn_layers = Encoder(
-        dim   = 512,
-        depth = 8,
-        heads = 8,
-        rotary_pos_emb = True,
-        attn_flash = True,
-    ),
-)
-
-model.load_state_dict(torch.load(MODEL_CKPT, map_location=DEVICE))
-
-model.to(DEVICE)
-model.eval()
-
-# Original training autoxast setup
-autocast_ctx = torch.amp.autocast(device_type=DEVICE, dtype=DTYPE)
-```
-
-#### Large model (16 layers - 2 epochs)
-
-```python
-import torch
-from x_transformers import TransformerWrapper, Encoder
-
-# Original model hyperparameters
-SEQ_LEN = 3072
-
-MASK_IDX     = 384 # Use this value for masked modelling
-PAD_IDX      = 385 # Model pad index
-VOCAB_SIZE   = 386 # Total vocab size
+MASK_IDX     = 718 # Use this value for masked modelling
+PAD_IDX      = 719 # Model pad index
+VOCAB_SIZE   = 720 # Total vocab size
 
 MASK_PROB    = 0.15 # Original training mask probability value (use for masked modelling)
 
@@ -207,9 +162,9 @@ model = TransformerWrapper(
     num_tokens = VOCAB_SIZE,
     max_seq_len = SEQ_LEN,
     attn_layers = Encoder(
-        dim   = 512,
+        dim   = 768,
         depth = 16,
-        heads = 8,
+        heads = 12,
         rotary_pos_emb = True,
         attn_flash = True,
     ),
