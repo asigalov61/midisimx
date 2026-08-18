@@ -111,7 +111,14 @@ input_toks_seqs = midisimx.midi_to_tokens('Come To My Window.mid')
 # ================================================================================================
 
 # Compute source/query embeddings
-query_emb = midisimx.get_embeddings_bf16(model, input_toks_seqs)
+query_emb = midisimx.get_embeddings_bf16(model,
+										 input_toks_seqs,
+                                         device=torch.device('cuda'),
+                                         pooling='weighted_mean',
+										 token_type_weights={(128, 256): 2,
+                                                             (384, 718): 2
+                                                            },
+										)
 
 # Calculate cosine similarity between source/query MIDI embeddings and embeddings corpus
 idxs, sims = midisimx.cosine_similarity_topk(query_emb, corpus_emb)
@@ -283,7 +290,7 @@ import os
 os.makedirs('./Master-MIDI-Dataset/', exist_ok=True)
 ```
 
-### Initialize midisimx, download and load chosen midisimx model and embeddings set
+### Initialize midisimx, download and load midisimx model and embeddings set
 
 ```python
 # Import main midisimx module
@@ -330,6 +337,12 @@ for fa in tqdm.tqdm(filez):
         # Compute source/query embeddings
         query_emb = midisimx.get_embeddings_bf16(model,
                                                 input_toks_seqs,
+
+		                                        device=torch.device('cuda'),
+		                                        pooling='weighted_mean',
+		                                        token_type_weights={(128, 256): 2,
+		                                                            (384, 718): 2
+		                                                           },
                                                 verbose=False,
                                                 show_progress_bar=False
                                                )
