@@ -28,7 +28,7 @@
 
 * These embeddings put more emphasis on pitches and chords (weights == 2) with start-times and durations left as is (weights == 1)
 
-```discover_midi_dataset_3267574_clean_midis_embeddings_1_2_1_2_weighted_cc_by_nc_sa.npy``` - 3267574 all clean MIDIs weighted embeddings from Discover MIDI Dataset for large scale similarity search and analysis tasks
+```discover_midi_dataset_3267574_clean_midis_embeddings_1_2_1_2_weighted_cc_by_nc_sa.npy``` - 3267574 clean MIDIs weighted embeddings from Discover MIDI Dataset for large scale similarity search and analysis tasks
 
 ```lakh_midi_dataset_17203_clean_midis_embeddings_1_2_1_2_weighted_cc_by_nc_sa.npy``` - 17203 LAKH clean_midi subset weighted embeddings tailored primarily for artist/song identification tasks
 
@@ -38,9 +38,7 @@
 
 ### [Similarity search output samples](https://huggingface.co/datasets/projectlosangeles/midisimx-samples)
 
-```midisimx-similarity-search-output-samples-CC-BY-NC-SA.zip``` - ~300000 MIDIs indentified with midisimx music discovery pipeline with both pre-trained models
-
-```midisimx-similarity-search-output-samples-1-1-2-weighted-CC-BY-NC-SA.zip``` - ~366000 MIDIs indentified with weighted midisimx music discovery pipeline with both pre-trained models
+```midisimx-similarity-search-output-samples-1-2-1-2-weighted-CC-BY-NC-SA.zip``` - ~169k MIDIs filtered by weighted midisimx music discovery pipeline
 
 #### Source MIDI dataset: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
 
