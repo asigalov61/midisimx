@@ -5,6 +5,21 @@
 
 ***
 
+## What's new
+
+## 🌟 midisimx vs midisim — comparison table
+
+| Feature / Change | midisimx | midisim |
+|------------------|----------|---------|
+| **Model Architecture** | ⭐ **One unified larger model** | Two smaller models |
+| **Model Dimension** | 🔥 **768** | 512 |
+| **Model Depth** | 🔥 **16 layers** | 16 + 8 layers |
+| **Attention Heads** | 🔥 **12 heads** | 8 heads |
+| **Training Corpus Size** | 🌍 **3M+ filtered & processed MIDIs** | 1M+ raw MIDIs |
+| **MIDI Event Representation** | 🎼 **start-time · note/chord · pitch · duration** | start-time · duration · pitch |
+| **Codebase Quality** | 💎 **Improved, extended, modernized** | Older original codebase |
+| **Overall Quality** | ✅ **Major upgrade** | Baseline |
+
 ## Main features
 
 * Ultra-fast and flexible GPU/CPU MIDI-to-MIDI similarity calculation, search and analysis
