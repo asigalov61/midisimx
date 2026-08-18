@@ -8,22 +8,21 @@
 ## Main features
 
 * Ultra-fast and flexible GPU/CPU MIDI-to-MIDI similarity calculation, search and analysis
-* Quality pre-trained models and comprehensive pre-computed embeddings sets
+* Quality pre-trained model and pre-computed embeddings sets
 * Stand-alone, versatile, and extensive codebase for general or custom MIDI-to-MIDI similarity tasks
 * Full cross-platform compatibility and support
 
 ***
 
-## [Pre-trained models](https://huggingface.co/projectlosangeles/midisim)
+## [Pre-trained models](https://huggingface.co/projectlosangeles/midisimxx)
 
-* ```midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth``` - Very fast and accurate small model, suitable for all tasks. This model is included in PyPI package or it can be downloaded from Hugging Face
-* ```midisim_large_pre_trained_model_2_epochs_86275_steps_0.2054_loss_0.9385_acc.pth``` - Fast large model for more nuanced embeddings generation. Download checkpoint from Hugging Face
+* ```midisimx_trained_model_14391_steps_0.255_loss_0.9036_acc.pth``` - Fast large model for a nuanced embeddings generation. Download checkpoint from Hugging Face
 
-#### Both pre-trained models were trained on full [Godzilla Piano](https://huggingface.co/datasets/asigalov61/Godzilla-Piano) dataset for 2 complete epochs
+#### This model was trained on full [Discover Piano](https://huggingface.co/datasets/asigalov61/Discover-Piano) dataset for 2 complete epochs
 
 ***
 
-## [Pre-computed embeddings sets](https://huggingface.co/datasets/projectlosangeles/midisim-embeddings)
+## [Pre-computed embeddings sets](https://huggingface.co/datasets/projectlosangeles/midisimx-embeddings)
 
 ### For small pre-trained model
 
@@ -69,11 +68,11 @@
 
 ***
 
-### [Similarity search output samples](https://huggingface.co/datasets/projectlosangeles/midisim-samples)
+### [Similarity search output samples](https://huggingface.co/datasets/projectlosangeles/midisimx-samples)
 
-```midisim-similarity-search-output-samples-CC-BY-NC-SA.zip``` - ~300000 MIDIs indentified with midisim music discovery pipeline with both pre-trained models
+```midisimx-similarity-search-output-samples-CC-BY-NC-SA.zip``` - ~300000 MIDIs indentified with midisimx music discovery pipeline with both pre-trained models
 
-```midisim-similarity-search-output-samples-1-1-2-weighted-CC-BY-NC-SA.zip``` - ~366000 MIDIs indentified with weighted midisim music discovery pipeline with both pre-trained models
+```midisimx-similarity-search-output-samples-1-1-2-weighted-CC-BY-NC-SA.zip``` - ~366000 MIDIs indentified with weighted midisimx music discovery pipeline with both pre-trained models
 
 #### Source MIDI dataset: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
 
@@ -81,7 +80,7 @@
 
 ## Installation
 
-### midisim PyPI package (for general use)
+### midisimx PyPI package (for general use)
 
 ```sh
 !pip install -U midisimx
@@ -101,72 +100,72 @@
 
 ```python
 # ================================================================================================
-# Initalize midisim
+# Initalize midisimx
 # ================================================================================================
 
-# Import main midisim module
-import midisim
+# Import main midisimx module
+import midisimx
 
 # ================================================================================================
-# Prepare midisim embeddings
+# Prepare midisimx embeddings
 # ================================================================================================
 
 # Option 1: Download sample pre-computed embeddings corpus from Hugging Face
-emb_path = midisim.download_embeddings()
+emb_path = midisimx.download_embeddings()
 
 # Option 2: use custom pre-computed embeddings corpus
 # See custom embeddings generation section of this README for details
 # emb_path = './custom_midis_embeddings_corpus.npy'
 
 # Load downloaded embeddings corpus
-corpus_midi_names, corpus_emb = midisim.load_embeddings(emb_path)
+corpus_midi_names, corpus_emb = midisimx.load_embeddings(emb_path)
 
 # ================================================================================================
-# Prepare midisim model
+# Prepare midisimx model
 # ================================================================================================
 
-# Option 1: Download main pre-trained midisim model from Hugging Face
-model_path = midisim.download_model()
+# Option 1: Download main pre-trained midisimx model from Hugging Face
+model_path = midisimx.download_model()
 
-# Option 2: Use main pre-trained midisim model included in midisim PyPI package
-# model_path = midisim.get_package_models()[0]['path']
+# Option 2: Use main pre-trained midisimx model included in midisimx PyPI package
+# model_path = midisimx.get_package_models()[0]['path']
 
-# Load midisim model
-model, ctx, dtype = midisim.load_model(model_path)
+# Load midisimx model
+model, ctx, dtype = midisimx.load_model(model_path)
 
 # ================================================================================================
 # Prepare source MIDI
 # ================================================================================================
 
 # Load source MIDI
-input_toks_seqs = midisim.midi_to_tokens('Come To My Window.mid')
+input_toks_seqs = midisimx.midi_to_tokens('Come To My Window.mid')
 
 # ================================================================================================
 # Calculate and analyze embeddings
 # ================================================================================================
 
 # Compute source/query embeddings
-query_emb = midisim.get_embeddings_bf16(model, input_toks_seqs)
+query_emb = midisimx.get_embeddings_bf16(model, input_toks_seqs)
 
 # Calculate cosine similarity between source/query MIDI embeddings and embeddings corpus
-idxs, sims = midisim.cosine_similarity_topk(query_emb, corpus_emb)
+idxs, sims = midisimx.cosine_similarity_topk(query_emb, corpus_emb)
 
 # ================================================================================================
 # Processs, print and save results
 # ================================================================================================
 
 # Convert the results to sorted list with transpose values
-idxs_sims_tvs_list = midisim.idxs_sims_to_sorted_list(idxs, sims)
+idxs_sims_tvs_list = midisimx.idxs_sims_to_sorted_list(idxs, sims)
 
 # Print corpus matches (and optionally) convert the final result to a handy list for further processing
-corpus_matches_list = midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list, corpus_midi_names, return_as_list=True)
+corpus_matches_list = midisimx.print_sorted_idxs_sims_list(idxs_sims_tvs_list, corpus_midi_names, return_as_list=True)
 
 # ================================================================================================
 # Copy matched MIDIs from the MIDI corpus for listening and further evaluation and analysis
 # ================================================================================================
 
 # Copy matched corpus MIDI to a desired directory for easy evaluation and analysis
-out_dir_path = midisim.copy_corpus_files(corpus_matches_list)
+out_dir_path = midisimx.copy_corpus_files(corpus_matches_list)
 
 # ================================================================================================
 ```
@@ -191,7 +190,7 @@ MASK_PROB    = 0.15 # Original training mask probability value (use for masked m
 DEVICE = 'cuda' # You can use any compatible device or CPU
 DTYPE  = torch.bfloat16 # Original training dtype
 
-# Official main midisim model checkpoint name
+# Official main midisimx model checkpoint name
 MODEL_CKPT = 'midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth'
 
 # Model architecture using x-transformers
@@ -234,7 +233,7 @@ MASK_PROB    = 0.15 # Original training mask probability value (use for masked m
 DEVICE = 'cuda' # You can use any compatible device or CPU
 DTYPE  = torch.bfloat16 # Original training dtype
 
-# Official main midisim model checkpoint name
+# Official main midisimx model checkpoint name
 MODEL_CKPT = 'midisim_large_pre_trained_model_2_epochs_86275_steps_0.2054_loss_0.9385_acc.pth'
 
 # Model architecture using x-transformers
@@ -266,8 +265,8 @@ autocast_ctx = torch.amp.autocast(device_type=DEVICE, dtype=DTYPE)
 ```python
 # ================================================================================================
 
-# Load main midisim module
-import midisim
+# Load main midisimx module
+import midisimx
 
 # Import helper modules
 import os
@@ -275,8 +274,8 @@ import tqdm
 
 # ================================================================================================
 
-# Call included TMIDIX module through midisim to create MIDI files list
-custom_midi_corpus_file_names = midisim.TMIDIX.create_files_list(['./custom_midi_corpus_dir/'])
+# Call included TMIDIX module through midisimx to create MIDI files list
+custom_midi_corpus_file_names = midisimx.TMIDIX.create_files_list(['./custom_midi_corpus_dir/'])
 
 # ================================================================================================
 
@@ -288,7 +287,7 @@ midi_corpus_tokens = []
 for midi_file in tqdm.tqdm(custom_midi_corpus_file_names):
     midi_corpus_file_names.append(os.path.splitext(os.path.basename(midi_file))[0])
     
-    midi_tokens = midisim.midi_to_tokens(midi_file, transpose_factor=0, verbose=False)[0]
+    midi_tokens = midisimx.midi_to_tokens(midi_file, transpose_factor=0, verbose=False)[0]
     midi_corpus_tokens.append(midi_tokens)
 
 # It is highly recommended to sort the resulting corpus by tokens sequence length
@@ -300,35 +299,35 @@ midi_corpus_file_names, midi_corpus_tokens = map(list, zip(*sorted_midi_corpus))
 # Now you are ready to generate embeddings as follows:
 # ================================================================================================
 
-# Load main midisim model
-model, ctx, dtype = midisim.load_model(verbose=False)
+# Load main midisimx model
+model, ctx, dtype = midisimx.load_model(verbose=False)
 
 # Generate MIDI corpus embeddings
-midi_corpus_embeddings = midisim.get_embeddings_bf16(model, midi_corpus_tokens, verbose=False)
+midi_corpus_embeddings = midisimx.get_embeddings_bf16(model, midi_corpus_tokens, verbose=False)
 
 # ================================================================================================
 
 # Save generated MIDI corpus embeddings and MIDI corpus file names in one handy NumPy file
-midisim.save_embeddings(midi_corpus_file_names,
+midisimx.save_embeddings(midi_corpus_file_names,
                         midi_corpus_embeddings,
                         verbose=False
                        )
 
 # ================================================================================================
 
-# You now can use this saved custom MIDI corpus NumPy file with midisim.load_embeddings()
+# You now can use this saved custom MIDI corpus NumPy file with midisimx.load_embeddings()
 # and the rest of the pipeline outlined in the general use section above
 ```
 
 ***
 
 ## Music discovery pipeline
-Here is a complete MIDI music discovery pipeline example using midisim and [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
+Here is a complete MIDI music discovery pipeline example using midisimx and [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
 
-### Install midisim and discovermidi PyPI packages
+### Install midisimx and discovermidi PyPI packages
 
 ```sh
-!pip install -U midisim
+!pip install -U midisimx
 ```
 
 ```sh
@@ -346,7 +345,7 @@ discovermidi.download_dataset()
 fast_parallel_extract.fast_parallel_extract()
 ```
 
-### Choose and prepare one midisim model and corresponding embeddings set
+### Choose and prepare one midisimx model and corresponding embeddings set
 
 #### Small model (8 layers)
 
@@ -374,23 +373,23 @@ import os
 os.makedirs('./Master-MIDI-Dataset/', exist_ok=True)
 ```
 
-### Initialize midisim, download and load chosen midisim model and embeddings set
+### Initialize midisimx, download and load chosen midisimx model and embeddings set
 
 ```python
-# Import main midisim module
-import midisim
+# Import main midisimx module
+import midisimx
 
 # Download embeddings from Hugging Face
-emb_path = midisim.download_embeddings(filename=embeddings_file)
+emb_path = midisimx.download_embeddings(filename=embeddings_file)
 
 # Load downloaded embeddings corpus
-corpus_midi_names, corpus_emb = midisim.load_embeddings(embeddings_path=emb_path)
+corpus_midi_names, corpus_emb = midisimx.load_embeddings(embeddings_path=emb_path)
 
-# Download midisim model from Hugging Face
-model_path = midisim.download_model(filename=model_ckpt)
+# Download midisimx model from Hugging Face
+model_path = midisimx.download_model(filename=model_ckpt)
 
-# Load midisim model
-model, ctx, dtype = midisim.load_model(model_path,
+# Load midisimx model
+model, ctx, dtype = midisimx.load_model(model_path,
                                        depth=model_depth
                                       )
 ```
@@ -398,7 +397,7 @@ model, ctx, dtype = midisim.load_model(model_path,
 ### Create Master MIDI dataset files list
 
 ```python
-filez = midisim.TMIDIX.create_files_list(['./Master-MIDI-Dataset/'])
+filez = midisimx.TMIDIX.create_files_list(['./Master-MIDI-Dataset/'])
 ```
 
 ### Launch the search
@@ -410,7 +409,7 @@ import tqdm
 for fa in tqdm.tqdm(filez):
     
     # Load source MIDI
-    input_toks_seqs = midisim.midi_to_tokens(fa, verbose=False)
+    input_toks_seqs = midisimx.midi_to_tokens(fa, verbose=False)
 
     if input_toks_seqs:
     
@@ -419,14 +418,14 @@ for fa in tqdm.tqdm(filez):
         # ================================================================================================
         
         # Compute source/query embeddings
-        query_emb = midisim.get_embeddings_bf16(model,
+        query_emb = midisimx.get_embeddings_bf16(model,
                                                 input_toks_seqs,
                                                 verbose=False,
                                                 show_progress_bar=False
                                                )
     
         # Calculate cosine similarity between source/query MIDI embeddings and embeddings corpus
-        idxs, sims = midisim.cosine_similarity_topk(query_emb,
+        idxs, sims = midisimx.cosine_similarity_topk(query_emb,
 													corpus_emb,
 													verbose=False
 												   )
@@ -436,10 +435,10 @@ for fa in tqdm.tqdm(filez):
         # ================================================================================================
          
         # Convert the results to sorted list with transpose values
-        idxs_sims_tvs_list = midisim.idxs_sims_to_sorted_list(idxs, sims)
+        idxs_sims_tvs_list = midisimx.idxs_sims_to_sorted_list(idxs, sims)
        
         # Print corpus matches (and optionally) convert the final result to a handy list for further processing
-        corpus_matches_list = midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list,
+        corpus_matches_list = midisimx.print_sorted_idxs_sims_list(idxs_sims_tvs_list,
                                                                   corpus_midi_names,
                                                                   return_as_list=True
                                                                  )
@@ -449,7 +448,7 @@ for fa in tqdm.tqdm(filez):
         # ================================================================================================
         
         # Copy matched corpus MIDI to a desired directory for easy evaluation and analysis
-        out_dir_path = midisim.copy_corpus_files(corpus_matches_list,
+        out_dir_path = midisimx.copy_corpus_files(corpus_matches_list,
                                                  corpus_midis_dirs=['./Discover-MIDI-Dataset/MIDIs/'],
                                                  main_output_dir='Output-MIDI-Dataset',
                                                  sub_output_dir=os.path.splitext(os.path.basename(fa))[0],
@@ -460,32 +459,32 @@ for fa in tqdm.tqdm(filez):
 
 ***
 
-## midisim functions reference lists
+## midisimx functions reference lists
 
 ### Main functions
 
-- ```midisim.copy_corpus_files``` — *Copy or synchronize MIDI corpus files from a source directory to a target corpus location.*  
-- ```midisim.cosine_similarity_topk``` — *Compute cosine similarities between a query embedding and a set of embeddings and return the top‑K matches.*  
-- ```midisim.download_all_embeddings``` — *Download an entire embeddings dataset snapshot from a Hugging Face dataset repository to a local directory.*  
-- ```midisim.download_embeddings``` — *Download a single precomputed embeddings `.npy` file from a Hugging Face dataset repository.*  
-- ```midisim.download_model``` — *Download a pre-trained model checkpoint file from a Hugging Face model repository to a local directory.*  
-- ```midisim.get_embeddings_bf16``` — *Load or convert embeddings into bfloat16 format for memory-efficient inference on supported hardware.*  
-- ```midisim.idxs_sims_to_sorted_list``` — *Convert parallel index and similarity arrays into a single sorted list of (index, similarity) pairs ordered by similarity.*  
-- ```midisim.load_embeddings``` — *Load a saved NumPy embeddings file and return the arrays of MIDI names and corresponding embedding vectors.*  
-- ```midisim.load_model``` — *Construct a Transformer model, load weights from a checkpoint, move it to the requested device, and return the model with an AMP autocast context and dtype.*  
-- ```midisim.masked_mean_pool``` — *Compute a masked mean pooling over sequence embeddings, ignoring padded positions via a boolean or numeric mask.*  
-- ```midisim.midi_to_tokens``` — *Convert a single-track MIDI file into one or more compact integer token sequences (with optional transpositions) suitable for model input.*  
-- ```midisim.pad_and_mask``` — *Pad a batch of variable-length token sequences to a common length and produce an attention/mask tensor indicating real tokens vs padding.*  
-- ```midisim.print_sorted_idxs_sims_list``` — *Pretty-print a sorted list of (index, similarity) pairs, optionally annotating entries with filenames or metadata.*  
-- ```midisim.save_embeddings``` — *Save a list of name strings and their corresponding embedding vectors into a structured NumPy array and optionally persist it to disk.*
+- ```midisimx.copy_corpus_files``` — *Copy or synchronize MIDI corpus files from a source directory to a target corpus location.*  
+- ```midisimx.cosine_similarity_topk``` — *Compute cosine similarities between a query embedding and a set of embeddings and return the top‑K matches.*  
+- ```midisimx.download_all_embeddings``` — *Download an entire embeddings dataset snapshot from a Hugging Face dataset repository to a local directory.*  
+- ```midisimx.download_embeddings``` — *Download a single precomputed embeddings `.npy` file from a Hugging Face dataset repository.*  
+- ```midisimx.download_model``` — *Download a pre-trained model checkpoint file from a Hugging Face model repository to a local directory.*  
+- ```midisimx.get_embeddings_bf16``` — *Load or convert embeddings into bfloat16 format for memory-efficient inference on supported hardware.*  
+- ```midisimx.idxs_sims_to_sorted_list``` — *Convert parallel index and similarity arrays into a single sorted list of (index, similarity) pairs ordered by similarity.*  
+- ```midisimx.load_embeddings``` — *Load a saved NumPy embeddings file and return the arrays of MIDI names and corresponding embedding vectors.*  
+- ```midisimx.load_model``` — *Construct a Transformer model, load weights from a checkpoint, move it to the requested device, and return the model with an AMP autocast context and dtype.*  
+- ```midisimx.masked_mean_pool``` — *Compute a masked mean pooling over sequence embeddings, ignoring padded positions via a boolean or numeric mask.*  
+- ```midisimx.midi_to_tokens``` — *Convert a single-track MIDI file into one or more compact integer token sequences (with optional transpositions) suitable for model input.*  
+- ```midisimx.pad_and_mask``` — *Pad a batch of variable-length token sequences to a common length and produce an attention/mask tensor indicating real tokens vs padding.*  
+- ```midisimx.print_sorted_idxs_sims_list``` — *Pretty-print a sorted list of (index, similarity) pairs, optionally annotating entries with filenames or metadata.*  
+- ```midisimx.save_embeddings``` — *Save a list of name strings and their corresponding embedding vectors into a structured NumPy array and optionally persist it to disk.*
 
 ### Helper functions
 
-- ```midisim.helpers.get_package_models``` — *Return a sorted list of packaged model files and their paths.*
-- ```midisim.helpers.get_package_embeddings``` — *Return a sorted list of packaged embedding files and their paths.*
-- ```midisim.helpers.get_normalized_midi_md5_hash``` — *Compute original and normalized MD5 hashes for a MIDI file.*
-- ```midisim.helpers.normalize_midi_file``` — *Normalize a MIDI file and write the result to disk.*
-- ```midisim.helpers.install_apt_package``` — *Idempotently install an apt package with retries and optional python‑apt.*
+- ```midisimx.helpers.get_package_models``` — *Return a sorted list of packaged model files and their paths.*
+- ```midisimx.helpers.get_package_embeddings``` — *Return a sorted list of packaged embedding files and their paths.*
+- ```midisimx.helpers.get_normalized_midi_md5_hash``` — *Compute original and normalized MD5 hashes for a MIDI file.*
+- ```midisimx.helpers.normalize_midi_file``` — *Normalize a MIDI file and write the result to disk.*
+- ```midisimx.helpers.install_apt_package``` — *Idempotently install an apt package with retries and optional python‑apt.*
 
 ***
 
@@ -503,9 +502,9 @@ for fa in tqdm.tqdm(filez):
 ```bibtex
 @misc{project_los_angeles_2025,
 	author       = { Project Los Angeles },
-	title        = { midisim (Revision 707e311) },
+	title        = { midisimx (Revision 707e311) },
 	year         = 2025,
-	url          = { https://huggingface.co/projectlosangeles/midisim },
+	url          = { https://huggingface.co/projectlosangeles/midisimx },
 	doi          = { 10.57967/hf/7383 },
 	publisher    = { Hugging Face }
 }
@@ -514,9 +513,9 @@ for fa in tqdm.tqdm(filez):
 ```bibtex
 @misc{project_los_angeles_2025,
 	author       = { Project Los Angeles },
-	title        = { midisim-embeddings (Revision 8ebb453) },
+	title        = { midisimx-embeddings (Revision 8ebb453) },
 	year         = 2025,
-	url          = { https://huggingface.co/datasets/projectlosangeles/midisim-embeddings },
+	url          = { https://huggingface.co/datasets/projectlosangeles/midisimx-embeddings },
 	doi          = { 10.57967/hf/7382 },
 	publisher    = { Hugging Face }
 }
@@ -525,9 +524,9 @@ for fa in tqdm.tqdm(filez):
 ```bibtex
 @misc{project_los_angeles_2025,
 	author       = { Project Los Angeles },
-	title        = { midisim-samples (Revision 79afcc1) },
+	title        = { midisimx-samples (Revision 79afcc1) },
 	year         = 2025,
-	url          = { https://huggingface.co/datasets/projectlosangeles/midisim-samples },
+	url          = { https://huggingface.co/datasets/projectlosangeles/midisimx-samples },
 	doi          = { 10.57967/hf/7388 },
 	publisher    = { Hugging Face }
 }
