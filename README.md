@@ -443,12 +443,12 @@ for fa in tqdm.tqdm(filez):
 ```
 
 ```bibtex
-@misc{project_los_angeles_2025,
-	author       = { Project Los Angeles },
-	title        = { midisimx-samples (Revision 79afcc1) },
-	year         = 2025,
+@misc{project_los_angeles_2026,
+	author       = { Project Los Angeles and Tegridy Code },
+	title        = { midisimx-samples (Revision 1bbf7ef) },
+	year         = 2026,
 	url          = { https://huggingface.co/datasets/projectlosangeles/midisimx-samples },
-	doi          = { 10.57967/hf/7388 },
+	doi          = { 10.57967/hf/10030 },
 	publisher    = { Hugging Face }
 }
 ```
@@ -462,6 +462,17 @@ for fa in tqdm.tqdm(filez):
 	doi          = { 10.57967/hf/7361 },
 	publisher    = { Hugging Face }
 }
+```
+
+```bibtex
+@phdthesis{raffel2016learning,
+  author       = { Colin Raffel },
+  title        = { Learning-Based Methods for Comparing Sequences, with Applications to Audio-to-{MIDI} Alignment and Matching },
+  school       = { Columbia University },
+  year         = { 2016 },
+  url          = { https://colinraffel.com/projects/lmd/ }
+}
+
 ```
 
 ***
