@@ -14,9 +14,9 @@
 
 ***
 
-## [Pre-trained models](https://huggingface.co/projectlosangeles/midisimxx)
+## [Pre-trained model](https://huggingface.co/projectlosangeles/midisimxx)
 
-* ```midisimx_trained_model_14391_steps_0.255_loss_0.9036_acc.pth``` - Fast large model for a nuanced embeddings generation. Download checkpoint from Hugging Face
+* ```midisimx_trained_model_14391_steps_0.255_loss_0.9036_acc.pth``` - Unified and fast large model for a nuanced embeddings generation. Download checkpoint from Hugging Face
 
 #### This model was trained on full [Discover Piano](https://huggingface.co/datasets/asigalov61/Discover-Piano) dataset for 2 complete epochs
 
@@ -24,47 +24,15 @@
 
 ## [Pre-computed embeddings sets](https://huggingface.co/datasets/projectlosangeles/midisimx-embeddings)
 
-### For small pre-trained model
+### Weighted Mean Pool Embeddings (1-2-1-2)
 
-#### Mean Pool Embeddings
-* These are standard general purpose embeddings which work best for comparing overall MIDI-to-MIDI similarity
+* These embeddings put more emphasis on pitches and chords (weights == 2) with start-times and durations left as is (weights == 1)
 
-```discover_midi_dataset_37292_genres_midis_embeddings_cc_by_nc_sa.npy``` - 37292 genre MIDIs embeddings for genre (artist and song) identification tasks
+```discover_midi_dataset_3267574_clean_midis_embeddings_1_2_1_2_weighted_cc_by_nc_sa.npy``` - 3267574 all clean MIDIs weighted embeddings from Discover MIDI Dataset for large scale similarity search and analysis tasks
 
-```discover_midi_dataset_202400_identified_midis_embeddings_cc_by_nc_sa.npy``` - 202400 identified MIDIs embeddings for MIDI identification tasks
+```lakh_midi_dataset_17203_clean_midis_embeddings_1_2_1_2_weighted_cc_by_nc_sa.npy``` - 17203 LAKH clean_midi subset weighted embeddings tailored primarily for artist/song identification tasks
 
-```discover_midi_dataset_3480123_clean_midis_embeddings_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs embeddings for large scale similarity search and analysis tasks
-
-#### Weighted Mean Pool Embeddings
-* These embeddings work best for comparing MIDI-tp=MIDI music structure (MIDI pitches) similarity.
-
-```discover_midi_dataset_37302_genre_midis_embeddings_1_1_2_weighted_cc_by_nc_sa.npy``` - 37302 genre MIDIs weighted embeddings for genre (artist and song) identification tasks
-
-```discover_midi_dataset_190032_identified_midis_embeddings_1_1_2_weighted_cc_by_nc_sa.npy``` - 190032 identified MIDIs weighted embeddings for MIDI identification tasks
-
-```discover_midi_dataset_3480123_clean_midis_embeddings_1_1_2_weighted_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs weighted embeddings for large scale similarity search and analysis tasks
-
-### For large pre-trained model
-
-#### Mean Pool Embeddings
-* These are standard general purpose embeddings which work best for comparing overall MIDI-to-MIDI similarity
-
-```discover_midi_dataset_37303_genres_midis_embeddings_large_cc_by_nc_sa.npy``` - 37303 genre MIDIs embeddings for genre (artist and song) identification tasks
-
-```discover_midi_dataset_202400_identified_midis_embeddings_large_cc_by_nc_sa.npy``` - 202400 identified MIDIs embeddings for MIDI identification tasks
-
-```discover_midi_dataset_3480123_clean_midis_embeddings_large_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs embeddings for large scale similarity search and analysis tasks
-
-#### Weighted Mean Pool Embeddings
-* These embeddings work best for comparing MIDI-tp=MIDI music structure (MIDI pitches) similarity.
-
-```discover_midi_dataset_37287_genres_midis_embeddings_1_1_2_weighted_large_cc_by_nc_sa.npy``` - 37287 genre MIDIs weighted embeddings for genre (artist and song) identification tasks
-
-```discover_midi_dataset_190032_identified_midis_embeddings_1_1_2_weighted_large_cc_by_nc_sa.npy``` - 190032 identified MIDIs weighted embeddings for MIDI identification tasks
-
-```discover_midi_dataset_3480123_clean_midis_embeddings_1_1_2_weighted_large_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs weighted embeddings for large scale similarity search and analysis tasks
-
-#### Source MIDI dataset: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
+#### Source MIDI datasets: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset) and [LAKH MIDI Dataset](https://colinraffel.com/projects/lmd/)
 
 ***
 
