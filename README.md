@@ -421,23 +421,23 @@ for fa in tqdm.tqdm(filez):
 ## Citations
 
 ```bibtex
-@misc{project_los_angeles_2025,
-	author       = { Project Los Angeles },
-	title        = { midisimx (Revision 707e311) },
-	year         = 2025,
+@misc{project_los_angeles_2026,
+	author       = { Project Los Angeles and Tegridy Code },
+	title        = { midisimx (Revision cfed861) },
+	year         = 2026,
 	url          = { https://huggingface.co/projectlosangeles/midisimx },
-	doi          = { 10.57967/hf/7383 },
+	doi          = { 10.57967/hf/10032 },
 	publisher    = { Hugging Face }
 }
 ```
 
 ```bibtex
-@misc{project_los_angeles_2025,
-	author       = { Project Los Angeles },
-	title        = { midisimx-embeddings (Revision 8ebb453) },
-	year         = 2025,
+@misc{project_los_angeles_2026,
+	author       = { Project Los Angeles and Tegridy Code },
+	title        = { midisimx-embeddings (Revision 0b13837) },
+	year         = 2026,
 	url          = { https://huggingface.co/datasets/projectlosangeles/midisimx-embeddings },
-	doi          = { 10.57967/hf/7382 },
+	doi          = { 10.57967/hf/10031 },
 	publisher    = { Hugging Face }
 }
 ```
@@ -472,7 +472,6 @@ for fa in tqdm.tqdm(filez):
   year         = { 2016 },
   url          = { https://colinraffel.com/projects/lmd/ }
 }
-
 ```
 
 ***
