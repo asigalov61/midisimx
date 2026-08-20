@@ -239,7 +239,7 @@ def load_model(model_path: str = './midisimx-models/midisimx_trained_model_14391
     ----------
     model_path : str, optional
         Filesystem path to the saved PyTorch checkpoint (state dict). Default is
-        `'./midisim-models/midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth'`.
+        `'midisimx_trained_model_14391_steps_0.255_loss_0.9036_acc.pth'`.
     dim : int, optional
         Hidden dimension size for the encoder attention layers. Default: 512.
     depth : int, optional
@@ -251,13 +251,20 @@ def load_model(model_path: str = './midisimx-models/midisimx_trained_model_14391
         Default: 3072.
     pad_idx : int, optional
         Index reserved for padding tokens. The model's vocabulary size is set to
-        `pad_idx + 1`. Default: 385.
+        `pad_idx + 1`. Default: 719.
     dtype : torch.dtype, optional
         Floating-point dtype used for AMP autocasting (e.g., `torch.bfloat16`,
         `torch.float16`, `torch.float32`). Default: `torch.bfloat16`.
     device : str or torch.device, optional
         Target device for the model (e.g., `'cuda'`, `'cpu'`, or a `torch.device`).
-        Default: `'cuda'`.
+        Default: `'cuda'`
+    compile_model : bool
+        If True, the model will be compiled using default (eager) torch.compile() mode.
+        Default: `'False'`
+    dynamic_compile : bool
+        If True when compile_model arg is True, the model will be compiled in
+        dynamic mode so that it works properly with sequences of different lengths
+        Default: `'True'`
     verbose : bool, optional
         If True, print initialization/loading progress and a model summary.
         Default: True.
@@ -306,11 +313,11 @@ def load_model(model_path: str = './midisimx-models/midisimx_trained_model_14391
     -------
     model, amp_ctx, dtype = load_model(
         model_path='checkpoints/midisim.pth',
-        dim=512,
-        depth=8,
-        heads=8,
+        dim=768,
+        depth=16,
+        heads=12,
         max_seq_len=3072,
-        pad_idx=385,
+        pad_idx=719,
         dtype=torch.bfloat16,
         device='cuda',
         verbose=True,
@@ -606,7 +613,8 @@ def midi_to_tokens(midi_file_path: str,
     - Convert to a delta-style event list and clip timing values to 0..127.
     - For each transpose variant, build a token sequence where:
         * nonzero delta times are appended as-is (0..127),
-        * note-on events are encoded as two tokens: (duration + 128) and (pitch + 256).
+        * chords are encoded as (note/chord + 384),
+        * note events are encoded as two tokens: (pitch + 128) and (duration + 256).
       The initial token of each sequence is 0 (start token).
 
     Parameters
@@ -620,6 +628,9 @@ def midi_to_tokens(midi_file_path: str,
         If > 0, the function generates variants for transpositions in the integer range
         [-transpose_factor, transpose_factor - 1]. If 0, only the original (no transpose)
         variant is produced. Default is 6.
+    clean_midi : bool, optional
+        If True, only lead and base instruments will be processed, the rest will be discarted.
+        Default is True.
     verbose : bool, optional
         When True, prints concise progress messages and enables tqdm progress bars.
         Progress bars use `tqdm(disable=not verbose)` so they are suppressed when verbose is False.
@@ -1109,7 +1120,7 @@ def masked_weighted_mean_aggregated_pool(
 
 def pad_and_mask(
     sequences: List[List[int]],
-    pad_idx: int = 385,
+    pad_idx: int = 719,
     seq_len: Optional[int] = None,
     device: Optional[torch.device] = None,
     verbose: bool = False,
@@ -1123,7 +1134,7 @@ def pad_and_mask(
 
     Args:
         sequences: List of token-id sequences (each a list of ints).
-        pad_idx: Token id used for padding (default: ``385``).
+        pad_idx: Token id used for padding (default: ``719``).
         seq_len: Optional cap on sequence length.  If ``None``, the batch
             maximum is used.
         device: Device for the returned tensors.  ``None`` uses the default.
@@ -1168,8 +1179,8 @@ def get_embeddings_bf16(
     model,
     sequences: List[List[int]],
     seq_len: Optional[int] = 3072,
-    seq_pad_idx: int = 385,
-    batch_size: int = 64,
+    seq_pad_idx: int = 719,
+    batch_size: int = 16,
     save_every_num_batches: int = -1,
     save_file_path: str = "saved_embeddings.npy",
     device: Optional[torch.device] = None,
@@ -1214,7 +1225,7 @@ def get_embeddings_bf16(
             list returns an empty ``(0, 0)`` result.
         seq_len: Target sequence length for truncation/padding (default:
             ``3072``).  If ``None``, the per-batch maximum is used.
-        seq_pad_idx: Token id used for padding (default: ``385``).
+        seq_pad_idx: Token id used for padding (default: ``719``).
         batch_size: Number of sequences per forward pass (default: ``64``).
         save_every_num_batches: If ``> 0``, save accumulated embeddings to
             ``save_file_path`` every this many batches (default: ``-1``,
