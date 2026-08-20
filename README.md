@@ -442,7 +442,7 @@ This allows encoding triads, extended chords, clusters, or any multi‑note harm
 
 ### Sample Encoded Sequence
 
-Below is a real midisimx token sequence excerpt you provided, formatted for readability.  
+Below is a real midisimx token sequence excerpt, formatted for readability.  
 Events are grouped to show how notes and chords appear:
 
 ```
