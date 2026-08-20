@@ -130,9 +130,11 @@ query_emb = midisimx.get_embeddings_bf16(model,
 										 input_toks_seqs,
                                          device=torch.device('cuda'),
                                          pooling='weighted_mean',
-  										 # The following arg is optional but recommended
-										 # if you want to make an emphasis on music
+  										 # The following arg is optional but recommended if
+										 # you want to make an emphasis on music
 										 # Remove it for overall/general similarity searches
+										 # PLEAE NOTE: You must enable it if you are using
+										 # included pre-computed weighted embeddings
 										 token_type_weights={(128, 256): 2, # Pitches weight
                                                              (384, 718): 2  # Chords weight
                                                             },
@@ -358,9 +360,11 @@ for fa in tqdm.tqdm(filez):
 
 		                                        device=torch.device('cuda'),
 		                                        pooling='weighted_mean',
-												# The following arg is optional but recommended
-												# if you want to make an emphasis on music
-												# Remove it for overall/general similarity searches
+	  										    # The following arg is optional but recommended if
+											    # you want to make an emphasis on music
+											    # Remove it for overall/general similarity searches
+											    # PLEAE NOTE: You must enable it if you are using
+											    # included pre-computed weighted embeddings
 												token_type_weights={(128, 256): 2, # Pitches weight
 												     				 (384, 718): 2  # Chords weight
 																	},
