@@ -407,6 +407,76 @@ for fa in tqdm.tqdm(filez):
 
 ***
 
+## MIDI Representation Encoding
+
+midisimx uses a **compact, event‑structured token format** that lets the model understand timing, harmony, melody, and rhythm with minimal overhead.
+
+Each event is encoded in a strict order, and **notes** and **chords** share the same structure—chords simply contain *multiple pitch–duration pairs*.
+
+| **Token Type** | **Range** | **Meaning** | **Notes** |
+| --- | --- | --- | --- |
+| **Delta Start‑Time** | 0–127 | Time since previous event | Encodes rhythmic spacing |
+| **Note/Chord Token** | 384–717 | Semitone or chord class | 384–395 → 12 semitones; 396–716 → 321 chords |
+| **Pitch** | 128–255 | MIDI pitch (0–127) | One per note; multiple for chords |
+| **Duration** | 256–383 | Note length | One per pitch |
+
+### Event Structure
+
+#### Notes
+
+A **note event** always has **four tokens**:
+
+```
+[delta‑start, note-token, pitch, duration]
+```
+
+#### Chords
+
+A **chord event** starts with the same two tokens, but then includes **multiple (pitch, duration) pairs**:
+
+```
+[delta‑start, chord-token, pitch, duration, pitch, duration, pitch, duration, ...]
+```
+
+This allows encoding triads, extended chords, clusters, or any multi‑note harmony.
+
+### Sample Encoded Sequence
+
+Below is a real midisimx token sequence excerpt you provided, formatted for readability.  
+Events are grouped to show how notes and chords appear:
+
+```
+[0, 643, 193, 321]  
+[186, 321, 179, 325]  
+[16, 391, 195, 265]  
+[9, 391, 195, 298]  
+[16, 387, 191, 272]  
+[16, 387, 191, 266]  
+[8, 689, 193, 323, 186, 321]        ← chord (two pitch–duration pairs)
+[1, 386, 178, 323]  
+[15, 391, 195, 265]  
+[9, 391, 195, 298]  
+[16, 387, 191, 283]  
+[24, 711, 196, 321, 186, 321]        ← chord
+[1, 384, 176, 320]  
+[15, 391, 195, 296]  
+[9, 389, 193, 297]  
+[23, 387, 191, 273]  
+[8, 391, 195, 315]  
+[9, 707, 183, 323, 174, 324]         ← chord
+[50, 391, 195, 274]  
+...
+```
+
+You can clearly see:
+
+- **Delta‑times** drive the rhythm
+- **Chord tokens** (≥396) introduce multi‑pitch structures
+- **Single notes** → 4 tokens
+- **Chords** → 2 + (pitch, duration) × N tokens
+
+***
+
 ## midisimx functions reference lists
 
 ### Main functions
