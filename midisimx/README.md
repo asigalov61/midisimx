@@ -53,7 +53,7 @@
 
 ### [Similarity search output samples](https://huggingface.co/datasets/projectlosangeles/midisimx-samples)
 
-```midisimx-similarity-search-output-samples-1-2-1-2-weighted-CC-BY-NC-SA.zip``` - ~169k MIDIs filtered by weighted midisimx music discovery pipeline
+```midisimx-similarity-search-output-samples-1-2-1-2-weighted-CC-BY-NC-SA.zip``` - ~182k+ MIDIs filtered by weighted midisimx music discovery pipeline
 
 #### Source MIDI dataset: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
 
@@ -542,10 +542,10 @@ You can clearly see:
 ```bibtex
 @misc{project_los_angeles_2026,
 	author       = { Project Los Angeles and Tegridy Code },
-	title        = { midisimx-samples (Revision 1bbf7ef) },
+	title        = { midisimx-samples (Revision 3c28df7) },
 	year         = 2026,
 	url          = { https://huggingface.co/datasets/projectlosangeles/midisimx-samples },
-	doi          = { 10.57967/hf/10030 },
+	doi          = { 10.57967/hf/10085 },
 	publisher    = { Hugging Face }
 }
 ```
