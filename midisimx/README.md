@@ -531,10 +531,10 @@ You can clearly see:
 ```bibtex
 @misc{project_los_angeles_2026,
 	author       = { Project Los Angeles and Tegridy Code },
-	title        = { midisimx-embeddings (Revision 0b13837) },
+	title        = { midisimx-embeddings (Revision 0af7bbc) },
 	year         = 2026,
 	url          = { https://huggingface.co/datasets/projectlosangeles/midisimx-embeddings },
-	doi          = { 10.57967/hf/10031 },
+	doi          = { 10.57967/hf/10082 },
 	publisher    = { Hugging Face }
 }
 ```

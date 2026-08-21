@@ -671,7 +671,8 @@ def midi_to_tokens(midi_file_path: str,
 
     """
     
-    CLEAN_INSTRUMENTS = TMIDIX.LEAD_INSTRUMENTS+TMIDIX.BASE_INSTRUMENTS
+    if not verbose:
+        TMIDIX.set_no_warning(True)
     
     all_toks_sequences = []
 
@@ -706,12 +707,9 @@ def midi_to_tokens(midi_file_path: str,
         if clean_midi:
             if verbose:
                 print('Cleaning MIDI...')
-            escore_notes = [e for e in escore_notes if e[6] < 80 and e[6] in CLEAN_INSTRUMENTS]
-            
-        else:
-            escore_notes = escore[0]
-            
-            
+                
+            escore_notes = [e for e in escore_notes if e[6] in TMIDIX.CLEAN_INSTRUMENTS]
+
         if not escore_notes:
             if verbose:
                 print("No enhanced score notes found after augmentation and cleaning. Returning empty list.")
@@ -1765,8 +1763,9 @@ def get_corpus_midis(corpus_midis_dirs_tuple: Tuple,
 def copy_corpus_files(sorted_idxs_sims_list: list[list],
                       corpus_midis_dirs: list = ['./Corpus MIDIs Dir/'],
                       main_output_dir: str = './Corpus Matches Dir/',
-                      sub_output_dir: str = 'Corpus MIDI Name',
+                      sub_output_dir: str = '',
                       copy_original_midi: bool = True,
+                      original_midi_path: str = '',
                       verbose: bool = True
                      ) -> str:
 
@@ -1806,16 +1805,26 @@ def copy_corpus_files(sorted_idxs_sims_list: list[list],
             tv = str(tv)
 
             inp_fn = corpus_midis_dic[cfname]
-    
+            
+            if not sub_output_dir and original_midi_path:
+                sub_output_dir = os.path.splitext(os.path.basename(original_midi_path))[0]
+        
             out_dir = os.path.join(main_output_dir, sub_output_dir)
             os.makedirs(out_dir, exist_ok=True)
 
-            if copy_original_midi and not original_copied:
+            if copy_original_midi and original_midi_path and not original_copied:
                 
                 src_fn = sub_output_dir + '.mid'
                 out_src_fn = os.path.join(out_dir, src_fn)
-                shutil.copy2(inp_fn, out_src_fn)
-                original_copied = True
+                
+                try:
+                    shutil.copy2(original_midi_path, out_src_fn)
+                    original_copied = True
+                    
+                except Exception as ex:
+                    if verbose:
+                        print(ex)
+                        print('Could not copy original MIDI:', os.path.basename(original_midi_path))
             
             out_fn = os.path.join(out_dir, sim + '_' + tv + '_' + cfname + '.mid')
     
