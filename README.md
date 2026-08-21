@@ -542,10 +542,10 @@ You can clearly see:
 ```bibtex
 @misc{project_los_angeles_2026,
 	author       = { Project Los Angeles and Tegridy Code },
-	title        = { midisimx-samples (Revision 1bbf7ef) },
+	title        = { midisimx-samples (Revision 3c28df7) },
 	year         = 2026,
 	url          = { https://huggingface.co/datasets/projectlosangeles/midisimx-samples },
-	doi          = { 10.57967/hf/10030 },
+	doi          = { 10.57967/hf/10085 },
 	publisher    = { Hugging Face }
 }
 ```
