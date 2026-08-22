@@ -477,32 +477,42 @@ You can clearly see:
 
 ***
 
-## midisimx functions reference lists
+## [midisimx API](https://github.com/asigalov61/midisimx/blob/main/midisimx/API_REFERENCE.md) functions index
 
-### Main functions
+### Core module — ```midisimx```
 
-- ```midisimx.copy_corpus_files``` — *Copy or synchronize MIDI corpus files from a source directory to a target corpus location.*  
-- ```midisimx.cosine_similarity_topk``` — *Compute cosine similarities between a query embedding and a set of embeddings and return the top‑K matches.*  
-- ```midisimx.download_all_embeddings``` — *Download an entire embeddings dataset snapshot from a Hugging Face dataset repository to a local directory.*  
-- ```midisimx.download_embeddings``` — *Download a single precomputed embeddings `.npy` file from a Hugging Face dataset repository.*  
-- ```midisimx.download_model``` — *Download a pre-trained model checkpoint file from a Hugging Face model repository to a local directory.*  
-- ```midisimx.get_embeddings_bf16``` — *Load or convert embeddings into bfloat16 format for memory-efficient inference on supported hardware.*  
-- ```midisimx.idxs_sims_to_sorted_list``` — *Convert parallel index and similarity arrays into a single sorted list of (index, similarity) pairs ordered by similarity.*  
-- ```midisimx.load_embeddings``` — *Load a saved NumPy embeddings file and return the arrays of MIDI names and corresponding embedding vectors.*  
-- ```midisimx.load_model``` — *Construct a Transformer model, load weights from a checkpoint, move it to the requested device, and return the model with an AMP autocast context and dtype.*  
-- ```midisimx.masked_mean_pool``` — *Compute a masked mean pooling over sequence embeddings, ignoring padded positions via a boolean or numeric mask.*  
-- ```midisimx.midi_to_tokens``` — *Convert a single-track MIDI file into one or more compact integer token sequences (with optional transpositions) suitable for model input.*  
-- ```midisimx.pad_and_mask``` — *Pad a batch of variable-length token sequences to a common length and produce an attention/mask tensor indicating real tokens vs padding.*  
-- ```midisimx.print_sorted_idxs_sims_list``` — *Pretty-print a sorted list of (index, similarity) pairs, optionally annotating entries with filenames or metadata.*  
-- ```midisimx.save_embeddings``` — *Save a list of name strings and their corresponding embedding vectors into a structured NumPy array and optionally persist it to disk.*
+- ```midisimx.copy_corpus_files``` — *Copy matched corpus MIDI files (search results) into an output directory as `{similarity}_{transpose}_{name}.mid`, optionally alongside the original query MIDI.*
+- ```midisimx.cosine_similarity_topk``` — *Compute chunked, GPU-accelerated top-k cosine similarities between query embeddings and a large corpus, returning top-k indices and similarity values per query as CPU NumPy arrays.*
+- ```midisimx.download_all_embeddings``` — *Download an entire embeddings dataset snapshot from a Hugging Face dataset repository to a local directory.*
+- ```midisimx.download_embeddings``` — *Download a single pre-computed embeddings `.npy` file from a Hugging Face dataset repository.*
+- ```midisimx.download_model``` — *Download a pre-trained model checkpoint from a Hugging Face model repository to a local directory.*
+- ```midisimx.get_corpus_midis``` — *Scan corpus MIDI directories (LRU-cached) and return a dict mapping file basenames (without extension) to full paths.*
+- ```midisimx.get_embeddings_bf16``` — *Compute embeddings for a list of token sequences in batches, with optional bfloat16 autocast, configurable pooling, L2 normalization, and periodic checkpointing.*
+- ```midisimx.idxs_sims_to_sorted_list``` — *Convert top-k index and similarity arrays into a single sorted list of (corpus index, transpose value, similarity) records, optionally deduplicated to the best transpose variant per corpus MIDI.*
+- ```midisimx.load_embeddings``` — *Load a saved NumPy structured embeddings file and return the arrays of MIDI names and corresponding embedding vectors.*
+- ```midisimx.load_model``` — *Construct the Transformer encoder, load weights from a checkpoint, move the model to the requested device, and return it with an AMP autocast context and dtype.*
+- ```midisimx.masked_mean_pool``` — *Compute a masked mean pooling over token embeddings, ignoring padded positions via a boolean mask.*
+- ```midisimx.masked_weighted_mean_aggregated_pool``` — *Compute a separate weighted mean-pooled embedding for each token-id range, then concatenate them into a 2-D tensor or stack them into a 3-D tensor.*
+- ```midisimx.masked_weighted_mean_pool``` — *Compute a weighted mean pooling over token embeddings, with per-token weights determined by token-id range weights.*
+- ```midisimx.midi_to_tokens``` — *Convert a single-track MIDI file into one or more compact integer token sequences (with optional transposition variants) suitable for model input.*
+- ```midisimx.pad_and_mask``` — *Pad a batch of variable-length token sequences to a common length and produce a boolean mask marking real tokens vs. padding.*
+- ```midisimx.print_sorted_idxs_sims_list``` — *Pretty-print a sorted search-results list with corpus names, or return it as `[rank, name, transpose, similarity]` records ready for `copy_corpus_files`.*
+- ```midisimx.random_ngram_replace``` — *Randomly replace single tokens and consecutive n-grams (length 2–`max_ngram`) in a token sequence with a masking value, returning a new sequence and leaving the original intact.*
+- ```midisimx.save_embeddings``` — *Save a list of name strings and their corresponding embedding vectors into a structured NumPy array, written to disk or returned in memory.*
 
-### Helper functions
+### Helper functions — ```midisimx.helpers```
 
-- ```midisimx.helpers.get_package_models``` — *Return a sorted list of packaged model files and their paths.*
-- ```midisimx.helpers.get_package_embeddings``` — *Return a sorted list of packaged embedding files and their paths.*
-- ```midisimx.helpers.get_normalized_midi_md5_hash``` — *Compute original and normalized MD5 hashes for a MIDI file.*
-- ```midisimx.helpers.normalize_midi_file``` — *Normalize a MIDI file and write the result to disk.*
-- ```midisimx.helpers.install_apt_package``` — *Idempotently install an apt package with retries and optional python‑apt.*
+- ```midisimx.helpers.get_normalized_midi_md5_hash``` — *Compute the original and normalization-invariant MD5 hashes of a MIDI file for deduplication and corpus alignment.*
+- ```midisimx.helpers.get_package_embeddings``` — *Return a sorted list of pre-computed embeddings files bundled with the package, with their full paths.*
+- ```midisimx.helpers.get_package_models``` — *Return a sorted list of model checkpoints bundled with the package, with their full paths.*
+- ```midisimx.helpers.install_apt_package``` — *Idempotently install an apt package with retries, optional `apt-get update`, and optional python-apt fallback.*
+- ```midisimx.helpers.is_installed``` — *Check whether a Debian/Ubuntu (dpkg) package is already installed.*
+- ```midisimx.helpers.normalize_midi_file``` — *Normalize a MIDI file via a TMIDIX score round-trip, write the result to disk, and return the output path.*
+
+### PCA reduction — ```midisimx.pca_reduce```
+
+- ```midisimx.pca_reduce.pca_reduce_embeddings``` — *Reduce an `(n, d)` embeddings matrix to `(n, target_dim)` via streaming, two-pass, GPU-accelerated PCA that never materializes the full dataset on the compute device.*
+- ```midisimx.pca_reduce.PCAReductionResult``` *(dataclass)* — *Container for PCA results: reduced embeddings, mean, covariance, eigenvalues/eigenvectors, projection matrix, explained-variance statistics, dataset dimensions, device, and phase timings.*
 
 ***
 
