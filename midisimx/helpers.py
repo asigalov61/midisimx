@@ -115,6 +115,45 @@ def get_package_embeddings() -> List[Dict]:
 
 ###################################################################################
 
+def sort_aligned_lists(midi_names: list[str],
+                       midi_sequences: list[list[int]],
+                       reverse: bool = False
+                       ) -> None:
+    
+    """
+    Sort two aligned lists in place based on the length of each MIDI sequence.
+
+    Parameters
+    ----------
+    midi_names : list[str]
+        List of MIDI file names. Must be aligned with `midi_sequences`.
+    midi_sequences : list[list[int]]
+        List of MIDI sequences (or any list-like objects). Each element's length
+        is used as the sorting key. Must be aligned with `midi_names`.
+    reverse : bool, optional
+        If True, sort in descending order (longest first). If False (default),
+        sort in ascending order (shortest first).
+
+    Notes
+    -----
+    - Sorting is **stable** because Python's `sorted()` is stable.
+    - Sorting is **in-place**: both lists are mutated and remain aligned.
+    - The function does not return anything; it modifies the input lists directly.
+
+    Returns
+    -------
+    None
+    """
+    
+    idx = sorted(range(len(midi_sequences)),
+                 key=lambda i: len(midi_sequences[i]),
+                 reverse=reverse)
+
+    midi_names[:] = [midi_names[i] for i in idx]
+    midi_sequences[:] = [midi_sequences[i] for i in idx]
+    
+###################################################################################
+
 def get_normalized_midi_md5_hash(midi_file: str) -> Dict:
     
     """

@@ -1533,7 +1533,7 @@ def cosine_similarity_topk(
 
     # Convert queries to torch and move to device
     if isinstance(query_embs, np.ndarray):
-        query = torch.from_numpy(query_embs)
+        query = torch.tensor(query_embs)
     else:
         query = query_embs
 
@@ -1558,7 +1558,7 @@ def cosine_similarity_topk(
 
         if corpus_is_numpy:
             # convert slice to tensor (shares memory with numpy if possible)
-            chunk = torch.from_numpy(corpus_embs[start:end])
+            chunk = torch.tensor(corpus_embs[start:end])
             chunk = chunk.to(device)
         else:
             # corpus is a torch tensor; move slice to device
