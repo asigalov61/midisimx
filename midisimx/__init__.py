@@ -1,4 +1,5 @@
 from .midisimx import download_embeddings, download_all_embeddings, load_embeddings, save_embeddings
+from .midisimx import load_tiny_model, load_tiny_embeddings
 from .midisimx import download_model, load_model
 from .midisimx import midi_to_tokens
 from .midisimx import random_ngram_replace

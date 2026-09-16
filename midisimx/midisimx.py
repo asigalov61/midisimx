@@ -88,6 +88,8 @@ from torchsummary import summary
 
 from . import TMIDIX
 
+from .helpers import get_package_models, get_package_embeddings
+
 from huggingface_hub import hf_hub_download, snapshot_download
 
 ###################################################################################
@@ -201,6 +203,105 @@ def download_model(repo_id: str = 'projectlosangeles/midisimx',
         print('=' * 70)
     
     return result
+
+###################################################################################
+
+def load_tiny_model(dim: int = 128,
+                    depth: int = 24,
+                    heads: int = 4,
+                    max_seq_len: int = 3072,
+                    pad_idx: int = 719,
+                    dtype: torch.dtype = torch.bfloat16,
+                    device: str = 'cuda',
+                    compile_model: bool = False,
+                    dynamic_compile: bool = True,
+                    verbose: bool = True
+                   ) -> str:
+
+    """
+    Convenience wrapper that loads a tiny (6.49M) midisimx Transformer model
+    included with a midisimx package.
+    """
+
+    if verbose:
+        print('=' * 70)
+        print('midisimx model loader')
+        print('=' * 70)
+        print('Initializing model...')
+
+    ctx = torch.amp.autocast(device_type=device, dtype=dtype)
+
+    model = TransformerWrapper(
+                num_tokens=pad_idx+1,
+                max_seq_len=max_seq_len,
+                attn_layers=Encoder(
+                    dim=dim,
+                    depth=depth,
+                    heads=heads,
+                    rotary_pos_emb=True,
+                    attn_flash=True,
+                ),
+    )
+
+    if verbose:
+        print('=' * 70)
+        print('Loading model checkpoint...')
+        
+    model_path = get_package_models()[0]['path']
+    
+    model.load_state_dict(torch.load(model_path, map_location=device))
+
+    if verbose:
+        print('=' * 70)
+    
+    if compile_model:
+        if verbose:
+            print('Compiling model...')
+        model = torch.compile(model, dynamic=dynamic_compile)
+        
+    model.to(device)
+        
+    model.eval()
+
+    if verbose:
+        print('Done!')
+
+        print('=' * 70)
+        print('Model Summary')
+        summary(model)
+
+    return model, ctx, dtype
+
+###################################################################################
+
+def load_tiny_embeddings(midi_names_key: str = 'midi_names',
+                         midi_embeddings_key: str = 'midi_embeddings',
+                         verbose: bool = True
+                        ) -> Tuple[np.ndarray, np.ndarray]:
+
+    """
+    Convenience wrapper that loads a tiny (128 dim) pre-computed
+    embeddings file included with the midisimx package
+
+    Returns
+    -------
+    Tuple of nd.arrays (midi_names_arr, midi_embeddings_arr)
+    """
+
+    if verbose:
+        print('=' * 70)
+        print('Loading embeddings...')
+        
+    emb_path = get_package_embeddings()[0]['path']
+        
+    embeddings_data = np.load(emb_path, allow_pickle=True)
+    
+    if verbose:
+        print('=' * 70)
+        print('Done!')
+        print('=' * 70)
+        
+    return embeddings_data[midi_names_key], embeddings_data[midi_embeddings_key]
 
 ###################################################################################
 
