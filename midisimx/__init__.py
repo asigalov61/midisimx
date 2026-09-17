@@ -8,6 +8,7 @@ from .midisimx import idxs_sims_to_sorted_list, print_sorted_idxs_sims_list
 from .midisimx import copy_corpus_files
 
 from .memmap import save_paired_memmap, load_paired_memmap, merge_paired_memmaps
+from .ldmb import save_ldmb, load_ldmb, open_ldmb, merge_ldmb
 
 from .pca_reduce import pca_reduce_embeddings
 
