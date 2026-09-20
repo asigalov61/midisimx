@@ -70,7 +70,7 @@ import os, copy, math, shutil
 
 os.environ["HF_XET_HIGH_PERFORMANCE"] = "1"
 
-from typing import List, Optional, Union, Tuple, Dict, Any
+from typing import List, Optional, Union, Tuple, Dict, Any, Sequence
 
 from functools import lru_cache
 
@@ -922,6 +922,145 @@ def midi_to_tokens(midi_file_path: str,
             
         return all_toks_sequences
 
+###################################################################################
+    
+def tokens_to_midi(
+    tokens: Sequence[int],
+    add_chords_labels: bool = True,
+    custom_labels: Optional[Dict[int, str]] = None,
+    output_signature: str = 'midisimx',
+    track_name: str = 'Project Los Angeles',
+    output_fname: str = 'midisimx_composition',
+    return_score: bool = False,
+    verbose: bool = False
+) -> Optional[List[List[Any]]]:
+    """
+    Convert a sequence of integer tokens into a MIDI-compatible score and write it to a file.
+
+    The function interprets integer tokens according to the following ranges and
+    appends corresponding events to an internal song representation (`song_f`):
+      - 0 <= t < 128
+        Interpreted as a time increment. The token value is multiplied by 32 and
+        added to the current time (milliseconds).
+      - 128 < t < 256
+        Interpreted as a pitch change. The pitch is set to (t - 128).
+      - 256 < t < 384
+        Interpreted as a note-on event. The duration is set to (t - 256) * 32
+        and a note event is appended: ['note', time, dur, channel, pitch, velocity, patch].
+        Velocity is clamped to at least 40 using `max(40, pitch)`.
+      - 384 <= t < 717
+        Interpreted as a chord label token. If `add_chords_labels` is True, a
+        text event is appended. The chord lookup uses `TMIDIX.ALL_CHORDS_SORTED`.
+        (A small offset is applied when indexing that list.)
+
+    After processing tokens, any `custom_labels` provided as a dict mapping
+    absolute times (milliseconds) to label strings will be appended as text events.
+
+    Finally, the function calls:
+      TMIDIX.Tegridy_ms_SONG_to_MIDI_Converter(
+          song_f,
+          output_signature=output_signature,
+          output_file_name=output_fname,
+          track_name=track_name,
+          list_of_MIDI_patches=patches,
+          verbose=verbose
+      )
+    to produce the MIDI (or midisimx) output file.
+
+    Parameters
+    ----------
+    tokens
+        A sequence of integer tokens to convert. Each token is interpreted by
+        numeric ranges described above.
+    add_chords_labels
+        If True, tokens in the chord-label range will produce text events
+        describing chords (using TMIDIX.ALL_CHORDS_SORTED).
+    custom_labels
+        Optional mapping of absolute times (milliseconds) to label strings.
+        Each pair will be appended as a text event at the specified time.
+    output_signature
+        Output format signature passed to the TMIDIX converter (default 'midisimx').
+    track_name
+        Name of the MIDI track to write.
+    output_fname
+        Base filename (without extension) used by the TMIDIX converter.
+    return_score
+        If True, the function returns the internal score representation
+        (`song_f`) after writing the file. Otherwise returns None.
+    verbose
+        If True, prints progress and enables tqdm progress bar.
+
+    Returns
+    -------
+    Optional[List[List[Any]]]
+        The internal score representation (`song_f`) if `return_score` is True,
+        otherwise None.
+
+    Notes
+    -----
+    - This function depends on the external modules/objects `TMIDIX` and `tqdm`.
+      Ensure they are imported and available in the calling environment.
+    - The function mutates local variables only and writes output via the
+      TMIDIX.Tegridy_ms_SONG_to_MIDI_Converter side effect.
+    - The exact chord indexing logic mirrors the original implementation:
+      `ctok = (t - 384)` and `chord = TMIDIX.ALL_CHORDS_SORTED[ctok-12] if ctok > 11 else [ctok]`.
+    - Time and duration units are consistent with the original implementation
+      (tokens scaled by 32 to produce millisecond-like units).
+
+    Example
+    -------
+    >>> tokens = [1, 130, 260, 2, 140, 270, 400]
+    >>> tokens_to_midi(tokens, output_fname='example', verbose=True, return_score=True)
+    [['note', 32, 32, 0, 2, 40, 0], ['note', 96, 32, 0, 12, 40, 0], ['text_event', 96, '[...]']]
+    """
+    if verbose:
+        print(f'Converting {len(tokens)} tokens to score...')
+        
+    time = 0
+    dur = 1
+    vel = 90
+    pitch = 60
+    channel = 0
+    patch = 0
+
+    patches = [0] * 16
+
+    song_f = []
+
+    for t in tqdm.tqdm(tokens, disable=not verbose):
+        
+        if 0 <= t < 128:
+            time += t * 32
+    
+        elif 128 < t < 256:
+            pitch = (t-128)
+    
+        elif 256 < t < 384:
+            dur = (t-256) * 32
+            song_f.append(['note', time, dur, channel, pitch, max(40, pitch), patch])
+
+        elif 384 <= t < 717:
+            if add_chords_labels:
+                ctok = (t-384)
+                chord = TMIDIX.ALL_CHORDS_SORTED[ctok-12] if ctok > 11 else [ctok]
+                song_f.append(['text_event', time, str(chord)])
+
+    if type(custom_labels) == dict:
+        for abs_time_ms, label in custom_labels.items():
+            song_f.append(['text_event', max(0, abs_time_ms), str(label)])
+
+    TMIDIX.Tegridy_ms_SONG_to_MIDI_Converter(
+        song_f,
+        output_signature=output_signature,
+        output_file_name=output_fname,
+        track_name=track_name,
+        list_of_MIDI_patches=patches,
+        verbose=verbose
+    )
+
+    if return_score:
+        return song_f
+    
 ###################################################################################
 
 def _normalize_token_type_weights(

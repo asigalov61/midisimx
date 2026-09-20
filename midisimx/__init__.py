@@ -1,7 +1,7 @@
 from .midisimx import download_embeddings, download_all_embeddings, load_embeddings, save_embeddings
 from .midisimx import load_tiny_model, load_tiny_embeddings
 from .midisimx import download_model, load_model
-from .midisimx import midi_to_tokens
+from .midisimx import midi_to_tokens, tokens_to_midi
 from .midisimx import random_ngram_replace
 from .midisimx import get_embeddings_bf16, cosine_similarity_topk
 from .midisimx import idxs_sims_to_sorted_list, print_sorted_idxs_sims_list
