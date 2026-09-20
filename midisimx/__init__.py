@@ -12,6 +12,8 @@ from .ldmb import save_ldmb, load_ldmb, open_ldmb, merge_ldmb
 
 from .pca_reduce import pca_reduce_embeddings
 
+from .crossmodal_mapper import CrossModalMapper
+
 from .x_transformer_2_3_1 import predict_masked_tokens_iter, print_masked_predictions_ids
 
 from .helpers import get_package_models, get_package_embeddings
