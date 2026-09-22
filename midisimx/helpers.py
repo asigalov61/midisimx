@@ -48,6 +48,7 @@ import os
 import shutil
 import subprocess
 import time
+import tqdm
 
 import hashlib
 
@@ -225,6 +226,90 @@ def normalize_midi_file(midi_file: str,
         fi.write(norm_midi)
 
     return midi_path
+
+###################################################################################
+
+def get_md5_hash(path, chunk_size=8 * 1024 * 1024, verbose=True):
+    """
+    Compute the MD5 hash of a very large file using chunked streaming
+    and an optional progress bar.
+
+    Parameters
+    ----------
+    path : str
+        Path to the file to hash (e.g., a multi‑GB ZIP file).
+    chunk_size : int, optional
+        Number of bytes to read per iteration. Default is 8 MiB, which
+        balances syscall overhead and throughput on SSD/NVMe systems.
+    verbose : bool, optional
+        If True, shows a tqdm progress bar with real‑time throughput.
+        If False, hashing runs silently.
+
+    Returns
+    -------
+    str
+        The hexadecimal MD5 digest of the file.
+
+    Notes
+    -----
+    - The function streams the file sequentially and never loads more
+      than `chunk_size` bytes into memory at once.
+    - The progress bar displays bytes processed, speed, and ETA.
+    - Suitable for extremely large files (tens or hundreds of GB).
+    """
+    total_size = os.path.getsize(path)
+    md5 = hashlib.md5()
+
+    with open(path, "rb") as f, tqdm.tqdm(
+        total=total_size,
+        unit="B",
+        unit_scale=True,
+        unit_divisor=1024,
+        disable=not verbose,
+        desc=os.path.basename(path)
+    ) as pbar:
+        while True:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+            md5.update(chunk)
+            pbar.update(len(chunk))
+
+    return md5.hexdigest()
+
+###################################################################################
+
+def get_sha256_hash(path, chunk_size=8 * 1024 * 1024, verbose=True):
+    """
+    Compute SHA-256 of a large file with optional progress display.
+
+    Uses a preallocated buffer and readinto() to minimize Python overhead.
+    """
+
+    total_size = os.path.getsize(path)
+    sha256 = hashlib.sha256()
+
+    buffer = bytearray(chunk_size)
+    view = memoryview(buffer)
+
+    with open(path, "rb", buffering=0) as f, tqdm.tqdm(
+        total=total_size,
+        unit="B",
+        unit_scale=True,
+        unit_divisor=1024,
+        disable=not verbose,
+        desc=os.path.basename(path),
+    ) as pbar:
+
+        while True:
+            n = f.readinto(buffer)
+            if not n:
+                break
+
+            sha256.update(view[:n])
+            pbar.update(n)
+
+    return sha256.hexdigest()
 
 ###################################################################################
 

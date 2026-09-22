@@ -74,6 +74,8 @@ from typing import List, Optional, Union, Tuple, Dict, Any, Sequence
 
 from functools import lru_cache
 
+from collections import Counter
+
 import tqdm
 
 import numpy as np
@@ -695,6 +697,7 @@ def midi_to_tokens(midi_file_path: str,
                    max_seq_len: int = 3072,
                    transpose_factor: int = 6,
                    clean_midi: bool = True,
+                   return_drum_track = False,
                    verbose: bool = True
                   )-> list[list[int]]:
     
@@ -835,8 +838,6 @@ def midi_to_tokens(midi_file_path: str,
 
         escore_notes = TMIDIX.fix_escore_notes_durations(escore_notes, min_notes_gap=0)
         
-        escore_notes = TMIDIX.recalculate_score_timings(escore_notes)
-        
         # Clamp transpose_factor to allowed range
         transpose_factor = max(0, min(6, transpose_factor))
             
@@ -907,12 +908,41 @@ def midi_to_tokens(midi_file_path: str,
                 print(f"Variant tv={tv} produced sequence length {len(score[:max_seq_len])}.")
                 
             all_toks_sequences.append(score[:max_seq_len])
+            
+        if return_drum_track:   
+            escore_notes = TMIDIX.augment_enhanced_score_notes([e for e in escore[0] if e[3] == 9], sort_drums_last=True)
+
+            escore_notes = TMIDIX.remove_duplicate_pitches_from_escore_notes(escore_notes)
+
+            fixed_score = TMIDIX.fix_escore_notes_durations(escore_notes, min_notes_gap=0)
+
+            vels = [e[5] for e in fixed_score]
+            avg_vel = sum(vels) / len(vels)
+
+            if len(set(vels)) < 4:
+                fixed_score = TMIDIX.humanize_velocities_in_escore_notes(fixed_score)
+
+            if avg_vel < 80:
+                TMIDIX.adjust_score_velocities(fixed_score, 100)
+
+            dscore = TMIDIX.delta_score_notes(fixed_score)
+
+            drum_score = [0]
+
+            for e in dscore:
+                if e[1] != 0:
+                    drum_score.append(e[1])
+
+                drum_score.extend([e[4]+256, e[2]+384, e[5]+640]) # 768
 
         if verbose:
             print('=' * 70)
             print(f"Finished processing. Produced {len(all_toks_sequences)} token sequence(s).")
             print('=' * 70)
-
+        
+        if return_drum_track:
+            return [all_toks_sequences, drum_score]
+        
         return all_toks_sequences
 
     except Exception as ex:
@@ -924,6 +954,36 @@ def midi_to_tokens(midi_file_path: str,
 
 ###################################################################################
     
+def midi_to_instruments_list(midi_file_path: str,
+                             return_instruments_counts: bool = False,
+                             verbose: bool = True
+                            )-> list[int]:
+    
+    instruments = []
+    
+    raw_score = TMIDIX.midi2single_track_ms_score(midi_file_path,
+                                                  do_not_check_MIDI_signature=True
+                                                  )
+    
+    if raw_score and raw_score[1]:
+        
+        escore_notes = TMIDIX.advanced_score_processor(raw_score,
+                                                       return_enhanced_score_notes=True,
+                                                       apply_sustain=False,
+                                                       )
+        
+        if escore_notes and escore_notes[0]:
+            instr_counts = Counter([e[6] for e in escore_notes[0]]).most_common()
+            
+            if return_instruments_counts:
+                return instr_counts
+            
+            return [ic[0] for ic in instr_counts]
+
+    return instruments
+
+###################################################################################
+    
 def tokens_to_midi(
     tokens: Sequence[int],
     add_chords_labels: bool = True,
@@ -931,9 +991,11 @@ def tokens_to_midi(
     output_signature: str = 'midisimx',
     track_name: str = 'Project Los Angeles',
     output_fname: str = 'midisimx_composition',
+    input_is_drum_track: bool = False,
     return_score: bool = False,
     verbose: bool = False
 ) -> Optional[List[List[Any]]]:
+    
     """
     Convert a sequence of integer tokens into a MIDI-compatible score and write it to a file.
 
@@ -1013,6 +1075,7 @@ def tokens_to_midi(
     >>> tokens_to_midi(tokens, output_fname='example', verbose=True, return_score=True)
     [['note', 32, 32, 0, 2, 40, 0], ['note', 96, 32, 0, 12, 40, 0], ['text_event', 96, '[...]']]
     """
+    
     if verbose:
         print(f'Converting {len(tokens)} tokens to score...')
         
@@ -1029,21 +1092,37 @@ def tokens_to_midi(
 
     for t in tqdm.tqdm(tokens, disable=not verbose):
         
-        if 0 <= t < 128:
-            time += t * 32
-    
-        elif 128 < t < 256:
-            pitch = (t-128)
-    
-        elif 256 < t < 384:
-            dur = (t-256) * 32
-            song_f.append(['note', time, dur, channel, pitch, max(40, pitch), patch])
+        if input_is_drum_track:
+            if 0 <= t < 256:
+                time += t * 16
 
-        elif 384 <= t < 717:
-            if add_chords_labels:
-                ctok = (t-384)
-                chord = TMIDIX.ALL_CHORDS_SORTED[ctok-12] if ctok > 11 else [ctok]
-                song_f.append(['text_event', time, str(chord)])
+            elif 256 < t < 384:
+                pitch = (t-256)
+
+            elif 384 < t < 640:
+                dur = (t-384) * 16
+                
+            elif 640 < t < 768:
+                vel = (t-640)
+                
+                song_f.append(['note', time, dur, 9, pitch, vel, 0])
+                    
+            else:
+                if 0 <= t < 128:
+                    time += t * 32
+            
+                elif 128 < t < 256:
+                    pitch = (t-128)
+            
+                elif 256 < t < 384:
+                    dur = (t-256) * 32
+                    song_f.append(['note', time, dur, channel, pitch, max(40, pitch), patch])
+
+                elif 384 <= t < 717:
+                    if add_chords_labels:
+                        ctok = (t-384)
+                        chord = TMIDIX.ALL_CHORDS_SORTED[ctok-12] if ctok > 11 else [ctok]
+                        song_f.append(['text_event', time, str(chord)])
 
     if type(custom_labels) == dict:
         for abs_time_ms, label in custom_labels.items():
