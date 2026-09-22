@@ -66,7 +66,7 @@ print('=' * 70)
 ###################################################################################
 ###################################################################################
 
-import os, copy, math, shutil
+import os, math, shutil
 
 os.environ["HF_XET_HIGH_PERFORMANCE"] = "1"
 
@@ -218,7 +218,7 @@ def load_tiny_model(dim: int = 128,
                     compile_model: bool = False,
                     dynamic_compile: bool = True,
                     verbose: bool = True
-                   ) -> str:
+                   ) -> tuple[TransformerWrapper, Any, Any]:
 
     """
     Convenience wrapper that loads a tiny (6.49M) midisimx Transformer model
@@ -318,7 +318,7 @@ def load_model(model_path: str = './midisimx-models/midisimx_trained_model_14391
                compile_model: bool = False,
                dynamic_compile: bool = True,
                verbose: bool = True
-              ) -> str:
+              ) -> tuple[TransformerWrapper, Any, Any]:
 
     """Load and initialize a preconfigured midisim Transformer model from a checkpoint.
     
@@ -615,7 +615,7 @@ def save_embeddings(embeddings_name_strings: list[str],
         embeddings = embeddings.cpu().numpy()
     elif type(embeddings) == list:
         if verbose:
-                print("[save_embeddings]: embeddings is a list, converting to numpy array")
+            print("[save_embeddings]: embeddings is a list, converting to numpy array")
         embeddings = np.array(embeddings)
     else:
         if verbose:
@@ -691,6 +691,132 @@ def save_embeddings(embeddings_name_strings: list[str],
         print('Done!')
         print('=' * 70)
         
+    return None
+        
+###################################################################################
+        
+label_to_id = {
+    'afrobeat': 0,
+    'afrocuban': 1,
+    'blues': 2,
+    'country': 3,
+    'dance': 4,
+    'funk': 5,
+    'gospel': 6,
+    'highlife': 7,
+    'hiphop': 8,
+    'jazz': 9,
+    'latin': 10,
+    'middleeastern': 11,
+    'neworleans': 12,
+    'pop': 13,
+    'punk': 14,
+    'reggae': 15,
+    'rock': 16,
+    'soul': 17,
+    'none': 18,
+    'unknown': 19
+}
+
+###################################################################################
+ 
+id_to_label = {
+    0: 'afrobeat',
+    1: 'afrocuban',
+    2: 'blues',
+    3: 'country',
+    4: 'dance',
+    5: 'funk',
+    6: 'gospel',
+    7: 'highlife',
+    8: 'hiphop',
+    9: 'jazz',
+    10: 'latin',
+    11: 'middleeastern',
+    12: 'neworleans',
+    13: 'pop',
+    14: 'punk',
+    15: 'reggae',
+    16: 'rock',
+    17: 'soul',
+    18: 'none',
+    19: 'unknown'
+}
+
+###################################################################################
+
+bpm_to_id = {
+    50: 0,
+    60: 1,
+    65: 2,
+    70: 3,
+    75: 4,
+    80: 5,
+    85: 6,
+    90: 7,
+    95: 8,
+    100: 9,
+    105: 10,
+    110: 11,
+    115: 12,
+    120: 13,
+    125: 14,
+    130: 15,
+    135: 16,
+    140: 17,
+    145: 18,
+    150: 19,
+    155: 20,
+    160: 21,
+    170: 22,
+    175: 23,
+    180: 24,
+    185: 25,
+    190: 26,
+    200: 27,
+    215: 28,
+    290: 29,
+    'none': 30,
+    'unknown': 31
+}
+
+###################################################################################
+
+id_to_bpm = {
+    0: 50,
+    1: 60,
+    2: 65,
+    3: 70,
+    4: 75,
+    5: 80,
+    6: 85,
+    7: 90,
+    8: 95,
+    9: 100,
+    10: 105,
+    11: 110,
+    12: 115,
+    13: 120,
+    14: 125,
+    15: 130,
+    16: 135,
+    17: 140,
+    18: 145,
+    19: 150,
+    20: 155,
+    21: 160,
+    22: 170,
+    23: 175,
+    24: 180,
+    25: 185,
+    26: 190,
+    27: 200,
+    28: 215,
+    29: 290,
+    30: 'none',
+    31: 'unknown'
+}
+
 ###################################################################################
 
 def midi_to_tokens(midi_file_path: str,
@@ -698,8 +824,10 @@ def midi_to_tokens(midi_file_path: str,
                    transpose_factor: int = 6,
                    clean_midi: bool = True,
                    return_drum_track = False,
+                   drum_track_style: str = 'pop',
+                   drum_track_bpm: int = 120,
                    verbose: bool = True
-                  )-> list[list[int]]:
+                  )-> tuple[list[list[int]], list[int] | None]:
     
     """
     Convert a single-track MIDI file into one or more compact token sequences suitable for model input.
@@ -778,7 +906,7 @@ def midi_to_tokens(midi_file_path: str,
     if not verbose:
         TMIDIX.set_no_warning(True)
     
-    all_toks_sequences = []
+    all_toks_sequences: list[list[int]] = []
 
     try:
         if verbose:
@@ -909,39 +1037,54 @@ def midi_to_tokens(midi_file_path: str,
                 
             all_toks_sequences.append(score[:max_seq_len])
             
-        if return_drum_track:   
-            escore_notes = TMIDIX.augment_enhanced_score_notes([e for e in escore[0] if e[3] == 9], sort_drums_last=True)
-
-            escore_notes = TMIDIX.remove_duplicate_pitches_from_escore_notes(escore_notes)
-
-            fixed_score = TMIDIX.fix_escore_notes_durations(escore_notes, min_notes_gap=0)
-
-            vels = [e[5] for e in fixed_score]
-            avg_vel = sum(vels) / len(vels)
-
-            if len(set(vels)) < 4:
-                fixed_score = TMIDIX.humanize_velocities_in_escore_notes(fixed_score)
-
-            if avg_vel < 80:
-                TMIDIX.adjust_score_velocities(fixed_score, 100)
-
-            dscore = TMIDIX.delta_score_notes(fixed_score)
-
-            drum_score = [0]
-
-            for e in dscore:
-                if e[1] != 0:
-                    drum_score.append(e[1])
-
-                drum_score.extend([e[4]+256, e[2]+384, e[5]+640]) # 768
-
-        if verbose:
-            print('=' * 70)
-            print(f"Finished processing. Produced {len(all_toks_sequences)} token sequence(s).")
-            print('=' * 70)
-        
         if return_drum_track:
-            return [all_toks_sequences, drum_score]
+            
+            if type(drum_track_style) == str:
+                drum_track_style_checked = drum_track_style.strip().lower() if drum_track_style.strip().lower() in label_to_id else 'unknown'
+                
+            else:
+                drum_track_style_checked = 'unknown'
+            drum_track_style_id = label_to_id[drum_track_style_checked]
+
+            drum_track_bpm_checked = max(50, min(290, int(drum_track_bpm))) if type(drum_track_bpm) == int else 120
+            drum_track_bpm_id = bpm_to_id[drum_track_bpm_checked]
+            
+            escore_notes = [e for e in TMIDIX.augment_enhanced_score_notes(escore[0], sort_drums_last=True) if e[3] == 9]
+            
+            drum_score: list[int] = []
+            
+            if escore_notes:
+            
+                escore_notes = TMIDIX.remove_duplicate_pitches_from_escore_notes(escore_notes)
+
+                fixed_score = TMIDIX.fix_escore_notes_durations(escore_notes, min_notes_gap=0)
+
+                vels = [e[5] for e in fixed_score]
+                avg_vel = sum(vels) / len(vels)
+
+                if len(set(vels)) < 4:
+                    fixed_score = TMIDIX.humanize_velocities_in_escore_notes(fixed_score)
+
+                if avg_vel < 80:
+                    TMIDIX.adjust_score_velocities(fixed_score, 100)
+
+                dscore = TMIDIX.delta_score_notes(fixed_score)
+
+                drum_score = [drum_track_style_id, drum_track_bpm_id, 0]
+
+                for e in dscore:
+                    if e[1] != 0:
+                        drum_score.append(e[1])
+
+                    drum_score.extend([e[4]+256, e[2]+384, e[5]+640]) # 768
+
+            if verbose:
+                print('=' * 70)
+                print(f"Finished processing. Produced {len(all_toks_sequences)} token sequence(s).")
+                print('=' * 70)
+            
+        if return_drum_track:
+            return all_toks_sequences, drum_score
         
         return all_toks_sequences
 
@@ -955,11 +1098,10 @@ def midi_to_tokens(midi_file_path: str,
 ###################################################################################
     
 def midi_to_instruments_list(midi_file_path: str,
-                             return_instruments_counts: bool = False,
-                             verbose: bool = True
-                            )-> list[int]:
+                             return_instruments_counts: bool = False
+                            )-> list[int] | list[tuple[Any, int]]:
     
-    instruments = []
+    instruments: list[int] = []
     
     raw_score = TMIDIX.midi2single_track_ms_score(midi_file_path,
                                                   do_not_check_MIDI_signature=True
@@ -1139,6 +1281,8 @@ def tokens_to_midi(
 
     if return_score:
         return song_f
+    
+    return None
     
 ###################################################################################
 
@@ -2004,7 +2148,7 @@ def idxs_sims_to_sorted_list(idxs: np.ndarray,
 def print_sorted_idxs_sims_list(sorted_idxs_sims_list: list,
                                 corpus_midi_names: Union[list, np.ndarray],
                                 return_as_list: bool = False,
-                                ) -> Union[List[Tuple], None]:
+                                ) -> tuple[list[list[Any]], None]:
     
     """
     Helper function that prints search results list generated by idxs_sims_to_sorted_list function
@@ -2037,6 +2181,7 @@ def print_sorted_idxs_sims_list(sorted_idxs_sims_list: list,
         print('=' * 70)
         print('Total number of records:', len(sorted_idxs_sims_list))
         print('=' * 70)
+        return None
     
     else:
         return return_list
