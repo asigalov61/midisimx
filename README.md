@@ -487,6 +487,49 @@ You can clearly see:
 
 ***
 
+## Project Structure
+
+```text
+midisimx/                                   # Project root
+├── LICENSE                                 # Apache-2.0 license text
+├── MANIFEST.in                             # Setuptools manifest — package-data inclusion rules for sdist/wheel
+├── README.md                               # Main project README — features, usage guides, links, citations
+├── midisimx/                               # The installable Python package
+│   ├── API_REFERENCE.md                    # This document — complete public API reference
+│   ├── MIDI.py                             # LEGACY — original parent of TMIDIX; unused, kept for reference/posterity
+│   ├── README.md                           # Package README (PyPI landing page)
+│   ├── TMIDIX.py                           # TMIDIX MIDI parsing/processing suite; re-exported as midisimx.TMIDIX
+│   ├── artwork/                            # Project images
+│   │   ├── Project-Los-Angeles.png         # Project Los Angeles logo
+│   │   ├── README.md                       # Artwork notes and credits
+│   │   ├── Tegridy-Code-2026.png           # Tegridy Code 2026 branding image
+│   │   └── midisimx.png                    # Project banner (embedded in READMEs)
+│   ├── crossmodal_mapper.py                # Non-ML closed-form bi-directional cross-modal embedding mapper (procrustes/ridge/cca)
+│   ├── embeddings/                         # Bundled pre-computed embeddings
+│   │   ├── README.md                       # Notes on bundled embeddings sets
+│   │   └── lakh_midi_dataset_17209......   # Tiny 128-dim weighted (1-2-1-2) embeddings for 17 209 clean LAKH MIDIs — pairs with the bundled tiny model
+│   ├── helpers.py                          # Utilities — bundled assets listing, MIDI normalization, file hashing, apt install
+│   ├── instrumentation_similarity.py       # Deterministic timbre-aware GM instrumentation similarity scoring
+│   ├── ldmb.py                             # LDMB — mmap-backed binary storage for large lists of dicts (lazy reads, byte-level merges)
+│   ├── memmap.py                           # Single-file memmap storage for paired names + float32 embeddings
+│   ├── midi_to_colab_audio.py              # AUX (optional) — renders MIDIs to audio via fluidsynth + SF2 soundfont banks
+│   ├── midisimx.py                         # CORE — model/embeddings I/O, MIDI↔tokens, embedding computation, similarity search
+│   ├── models/                             # Bundled model checkpoints
+│   │   ├── README.md                       # Notes on bundled models
+│   │   └── midisimx_tiny_trained_model...  # Tiny 6.49M-param Transformer checkpoint (14 401 steps · 0.5146 loss · 0.8202 acc)
+│   ├── pca_reduce.py                       # Streaming, GPU-accelerated PCA reduction (PCAReductor, PCAReductionResult)
+│   └── x_transformer_2_3_1.py              # CORE (models) — vendored, stand-alone x-transformers v2.3.1 by lucidrains
+└── pyproject.toml                          # PEP 621 packaging metadata — version, dependencies, PyPI URLs, classifiers
+```
+
+**Legend:**
+- **CORE** — required by the main similarity pipeline.
+- **AUX** — optional convenience module; requires `fluidsynth` (installable via `midisimx.helpers.install_apt_package('fluidsynth')`) and SF2 banks; audio rendering only.
+- **LEGACY** — not used anywhere in the project; provided for reference, convenience, and posterity.
+- The vendored `x_transformer_2_3_1.py` makes the core pipeline independent of the PyPI `x-transformers` package (which is only needed for raw/custom tasks).
+
+***
+
 ## Limitations
 
 * Current code and models support only MIDI music elements similarity (start-times, durations, pitches and chords)
