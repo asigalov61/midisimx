@@ -1,4 +1,4 @@
-## midisimx API Functions Index
+## midisimx API Functions Index (v26.9.28+)
 
 ### Core module — `midisimx`
 
@@ -84,3 +84,6 @@
   - `CrossModalMapper.load` *(classmethod)* — *Restore a saved mapper.*
 
 ---
+
+### Project Los Angeles
+### Tegridy Code 2026
