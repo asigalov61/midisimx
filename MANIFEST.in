@@ -3,3 +3,4 @@ recursive-include midisimx/ *
 recursive-include midisimx/models *
 recursive-include midisimx/embeddings *
 recursive-include midisimx/artwork *
+recursive-include midisimx/docs *
