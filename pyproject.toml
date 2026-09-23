@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "midisimx"
-version = "26.9.27"
-description = "Calculate, search, and analyze MIDI-to-MIDI similarity at scale"
+version = "26.9.28"
+description = "Greatly improved, enhanced, and streamlined fork of midisim for calculating, searching, and analyzing MIDI-to-MIDI similarity at scale"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 authors = [
@@ -78,7 +78,7 @@ content-type = "text/markdown"
 
 [project.urls]
 Homepage = "https://github.com/asigalov61/midisimx"
-Documentation = "https://github.com/asigalov61/midisimx/midisimx/docs"
+Documentation = "https://github.com/asigalov61/midisimx/tree/main/midisimx/docs"
 Models = "https://huggingface.co/projectlosangeles/midisimx"
 Embeddings = "https://huggingface.co/datasets/projectlosangeles/midisimx-embeddings"
 Samples = "https://huggingface.co/datasets/projectlosangeles/midisimx-samples"
