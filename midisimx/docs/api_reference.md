@@ -1,6 +1,6 @@
 # midisimx — API Reference
 
-**Version:** 26.9.26 · **Python:** ≥ 3.8 · **License:** Apache-2.0
+**Version:** 26.9.26+ · **Python:** ≥ 3.8 · **License:** Apache-2.0
 **Package:** `pip install -U midisimx`
 
 Modules: `midisimx` (core), `midisimx.helpers`, `midisimx.instrumentation_similarity`, `midisimx.memmap`, `midisimx.pca_reduce`. The bundled `TMIDIX` is re-exported as `midisimx.TMIDIX` (e.g. `TMIDIX.create_files_list(dirs)`).
