@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "midisimx"
-version = "26.9.28"
+version = "26.9.32"
 description = "Greatly improved, enhanced, and streamlined fork of midisim for calculating, searching, and analyzing MIDI-to-MIDI similarity at scale"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
