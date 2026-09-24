@@ -90,6 +90,9 @@ from torchsummary import summary
 
 from . import TMIDIX
 
+from .config import drums_style_to_id, drums_bpm_to_id
+from .config import id_to_drums_style, id_to_drums_bpm
+
 from .helpers import get_package_models, get_package_embeddings
 
 from huggingface_hub import hf_hub_download, snapshot_download
@@ -694,130 +697,6 @@ def save_embeddings(embeddings_name_strings: list[str],
     return None
         
 ###################################################################################
-        
-label_to_id = {
-    'afrobeat': 0,
-    'afrocuban': 1,
-    'blues': 2,
-    'country': 3,
-    'dance': 4,
-    'funk': 5,
-    'gospel': 6,
-    'highlife': 7,
-    'hiphop': 8,
-    'jazz': 9,
-    'latin': 10,
-    'middleeastern': 11,
-    'neworleans': 12,
-    'pop': 13,
-    'punk': 14,
-    'reggae': 15,
-    'rock': 16,
-    'soul': 17,
-    'none': 18,
-    'unknown': 19
-}
-
-###################################################################################
- 
-id_to_label = {
-    0: 'afrobeat',
-    1: 'afrocuban',
-    2: 'blues',
-    3: 'country',
-    4: 'dance',
-    5: 'funk',
-    6: 'gospel',
-    7: 'highlife',
-    8: 'hiphop',
-    9: 'jazz',
-    10: 'latin',
-    11: 'middleeastern',
-    12: 'neworleans',
-    13: 'pop',
-    14: 'punk',
-    15: 'reggae',
-    16: 'rock',
-    17: 'soul',
-    18: 'none',
-    19: 'unknown'
-}
-
-###################################################################################
-
-bpm_to_id = {
-    50: 0,
-    60: 1,
-    65: 2,
-    70: 3,
-    75: 4,
-    80: 5,
-    85: 6,
-    90: 7,
-    95: 8,
-    100: 9,
-    105: 10,
-    110: 11,
-    115: 12,
-    120: 13,
-    125: 14,
-    130: 15,
-    135: 16,
-    140: 17,
-    145: 18,
-    150: 19,
-    155: 20,
-    160: 21,
-    170: 22,
-    175: 23,
-    180: 24,
-    185: 25,
-    190: 26,
-    200: 27,
-    215: 28,
-    290: 29,
-    'none': 30,
-    'unknown': 31
-}
-
-###################################################################################
-
-id_to_bpm = {
-    0: 50,
-    1: 60,
-    2: 65,
-    3: 70,
-    4: 75,
-    5: 80,
-    6: 85,
-    7: 90,
-    8: 95,
-    9: 100,
-    10: 105,
-    11: 110,
-    12: 115,
-    13: 120,
-    14: 125,
-    15: 130,
-    16: 135,
-    17: 140,
-    18: 145,
-    19: 150,
-    20: 155,
-    21: 160,
-    22: 170,
-    23: 175,
-    24: 180,
-    25: 185,
-    26: 190,
-    27: 200,
-    28: 215,
-    29: 290,
-    30: 'none',
-    31: 'unknown'
-}
-
-###################################################################################
 
 def midi_to_tokens(midi_file_path: str,
                    max_seq_len: int = 3072,
@@ -1040,14 +919,14 @@ def midi_to_tokens(midi_file_path: str,
         if return_drum_track:
             
             if type(drum_track_style) == str:
-                drum_track_style_checked = drum_track_style.strip().lower() if drum_track_style.strip().lower() in label_to_id else 'unknown'
+                drum_track_style_checked = drum_track_style.strip().lower() if drum_track_style.strip().lower() in drums_style_to_id else 'unknown'
                 
             else:
                 drum_track_style_checked = 'unknown'
-            drum_track_style_id = label_to_id[drum_track_style_checked]
+            drum_track_style_id = drums_style_to_id[drum_track_style_checked]
 
-            drum_track_bpm_checked = max(50, min(290, int(drum_track_bpm))) if type(drum_track_bpm) == int else 120
-            drum_track_bpm_id = bpm_to_id[drum_track_bpm_checked]
+            drum_track_bpm_checked = max(50, min(290, int(drum_track_bpm))) if type(drum_track_bpm) == int else 'unknown'
+            drum_track_bpm_id = drums_bpm_to_id[drum_track_bpm_checked]
             
             escore_notes = [e for e in TMIDIX.augment_enhanced_score_notes(escore[0], sort_drums_last=True) if e[3] == 9]
             
@@ -1070,7 +949,7 @@ def midi_to_tokens(midi_file_path: str,
 
                 dscore = TMIDIX.delta_score_notes(fixed_score)
 
-                drum_score = [drum_track_style_id, drum_track_bpm_id, 0]
+                drum_score = [820, drum_track_style_id+768, drum_track_bpm_id+788, 0] # 821
 
                 for e in dscore:
                     if e[1] != 0:
@@ -1278,6 +1157,9 @@ def tokens_to_midi(
         list_of_MIDI_patches=patches,
         verbose=verbose
     )
+    
+    if verbose:
+        print('Done!')
 
     if return_score:
         return song_f
