@@ -702,6 +702,9 @@ def midi_to_tokens(midi_file_path: str,
                    max_seq_len: int = 3072,
                    transpose_factor: int = 6,
                    clean_midi: bool = True,
+                   emit_bar_token: bool = False,
+                   emit_vels_tokens: bool = False,
+                   emit_inst_tokens: bool = False,
                    return_drum_track = False,
                    drum_track_style: str = 'pop',
                    drum_track_bpm: int = 120,
@@ -742,6 +745,22 @@ def midi_to_tokens(midi_file_path: str,
     clean_midi : bool, optional
         If True, only lead and base instruments will be processed, the rest will be discarted.
         Default is True.
+    emit_bar_token : bool, optional
+        If True, the processor will emmit single bar token (717) before each bar delta start time.
+        WARNING: This option is disabled by default because it is not compatible with provided
+        midisimx models and embeddings.
+        Default is False.
+    emit_vels_tokens : bool, optional
+        If True, the processor will emit full velocity tokens range (718-846) after duration tokens.
+        WARNING: This option is disabled by default because it is not compatible with provided
+        midisimx models and embeddings.
+        Default is False.
+    emit_inst_tokens : bool, optional
+        If True, the processor will emit full instruments (846-973) + drums(974) tokens range (846-975)
+        before pitches tokens.
+        WARNING: This option is disabled by default because it is not compatible with provided
+        midisimx models and embeddings.
+        Default is False.
     verbose : bool, optional
         When True, prints concise progress messages and enables tqdm progress bars.
         Progress bars use `tqdm(disable=not verbose)` so they are suppressed when verbose is False.
@@ -887,11 +906,19 @@ def midi_to_tokens(midi_file_path: str,
             cscore = TMIDIX.chordify_score([1000, fixed_score])
 
             score = []
+            
+            abs_time = 0
+            pbar = -1
 
             pc = cscore[0]
 
             for c in cscore:
                 c.sort(key=lambda x: -x[4])
+                
+                if abs_time // 128 > pbar:
+                    if emit_bar_token:
+                        score.append(717) # Single bar token (717)
+                    pbar = abs_time // 128
 
                 tones_chord = sorted(set([p[4] % 12 for p in c]))
 
@@ -905,9 +932,17 @@ def midi_to_tokens(midi_file_path: str,
                 score.append(dtime)
 
                 score.append(chord_tok+384)
+                
+                abs_time += dtime
 
                 for e in c:
+                    if emit_inst_tokens:
+                        score.append(max(0, min(128, e[6]))+846) # 846 -> 975 --- full instruments range (128) + drums (129)
+                        
                     score.extend([max(1, min(127, e[4]))+128, max(1, min(127, e[2]))+256])
+                    
+                    if emit_vels_tokens:
+                        score.append(max(1, min(127, e[5]))+718) # 718 -> 846 --- full velocities range (128)
 
                 pc = c
 

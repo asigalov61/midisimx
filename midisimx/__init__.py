@@ -31,3 +31,5 @@ from .helpers import get_md5_hash, get_sha256_hash
 from .helpers import install_apt_package
 
 from .print_collector import PrintCollector
+
+from .train_encoder import train_encoder
