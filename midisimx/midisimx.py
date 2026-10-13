@@ -1163,22 +1163,22 @@ def tokens_to_midi(
                 
                 song_f.append(['note', time, dur, 9, pitch, vel, 0])
                     
-            else:
-                if 0 <= t < 128:
-                    time += t * 32
-            
-                elif 128 < t < 256:
-                    pitch = (t-128)
-            
-                elif 256 < t < 384:
-                    dur = (t-256) * 32
-                    song_f.append(['note', time, dur, channel, pitch, max(40, pitch), patch])
+        else:
+            if 0 <= t < 128:
+                time += t * 32
+        
+            elif 128 < t < 256:
+                pitch = (t-128)
+        
+            elif 256 < t < 384:
+                dur = (t-256) * 32
+                song_f.append(['note', time, dur, channel, pitch, max(40, pitch), patch])
 
-                elif 384 <= t < 717:
-                    if add_chords_labels:
-                        ctok = (t-384)
-                        chord = TMIDIX.ALL_CHORDS_SORTED[ctok-12] if ctok > 11 else [ctok]
-                        song_f.append(['text_event', time, str(chord)])
+            elif 384 <= t < 717:
+                if add_chords_labels:
+                    ctok = (t-384)
+                    chord = TMIDIX.ALL_CHORDS_SORTED[ctok-12] if ctok > 11 else [ctok]
+                    song_f.append(['text_event', time, str(chord)])
 
     if type(custom_labels) == dict:
         for abs_time_ms, label in custom_labels.items():
