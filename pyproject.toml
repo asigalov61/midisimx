@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "midisimx"
-version = "26.10.13"
+version = "26.10.15"
 description = "Greatly improved, enhanced, and streamlined fork of midisim for calculating, searching, and analyzing MIDI-to-MIDI similarity at scale"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
@@ -19,8 +19,7 @@ dependencies = [
   "ipywidgets",
   "huggingface_hub",
   "torch",
-  "einops",
-  "einx",
+  "x-transformers==2.3.1",
   "torch-summary",
   "matplotlib",
   "networkx",
