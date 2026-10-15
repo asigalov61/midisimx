@@ -18,6 +18,12 @@ from .pca_reduce import pca_reduce_embeddings
 
 from .crossmodal_mapper import CrossModalMapper
 
+from .streaming_memory import MemoryAggregator, LearnedSetCompressor
+from .streaming_memory import dedupe_exact, find_near_dups, collapse_near_dups
+from .streaming_memory import build_leaves
+from .streaming_memory import train_set_compressor, train_routing_centroids
+from .streaming_memory import ivf_report, build_routing_index, routing_report_indexed
+
 from .x_transformer_2_3_1 import predict_masked_tokens_iter, print_masked_predictions_ids
 
 from .multi_label_cls import load_mlcls_model, predict_mlcls
