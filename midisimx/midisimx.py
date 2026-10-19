@@ -41,10 +41,10 @@ r'''############################################################################
 #   !pip install tqdm
 #   !pip install scikit-learn
 #   !pip install torch
-#   !pip install einops
-@   !pip install einx
+#	!pip install x-transformers
 #   !pip install torch-summary
 #   !pip install matplotlib
+#	!pip install networkx
 #   !pip install numpy==1.26.4
 #
 ###################################################################################
@@ -702,103 +702,200 @@ def midi_to_tokens(midi_file_path: str,
                    max_seq_len: int = 3072,
                    transpose_factor: int = 6,
                    clean_midi: bool = True,
+                   bar_time_ms: int = 4096,
+                   chunk_by_bars: bool = False,
                    emit_bar_token: bool = False,
                    emit_vels_tokens: bool = False,
                    emit_inst_tokens: bool = False,
+                   transpose_to_pitch: int = 0,
                    return_drum_track = False,
                    drum_track_style: str = 'pop',
                    drum_track_bpm: int = 120,
                    verbose: bool = True
-                  )-> tuple[list[list[int]], list[int] | None]:
-    
+                  )-> tuple[list[list[int]] | tuple[list[list[int]], list[int]] | None]:
+
     """
-    Convert a single-track MIDI file into one or more compact token sequences suitable for model input.
+    Convert a MIDI file into compact integer token sequence(s) for model
+    input, optionally together with a drum-track token sequence.
 
-    This function performs a sequence of TMIDIX preprocessing steps to extract an
-    "enhanced score" from a MIDI file, normalizes and clips timing/pitch values,
-    optionally generates transposed variants, and encodes events into a compact
-    integer token stream.
+    The file is loaded, reduced to a sanitized solo-piano score, and encoded
+    chord-by-chord into flat integer sequences. Multiple semitone-transposed
+    variants can be generated; each variant's stream is either truncated to
+    ``max_seq_len`` or split into bar-aligned chunks. If requested, a
+    separate drum-track token sequence is additionally derived from the
+    score's channel-9 (GM drums) notes.
 
-    Key processing stages
-    - Load MIDI and convert to a single-track millisecond score.
-    - Produce an enhanced-score with sustain applied.
-    - Extract solo-piano notes and recalculate/augment timings.
-    - Remove duplicate pitches and fix note durations.
-    - Convert to a delta-style event list and clip timing values to 0..127.
-    - For each transpose variant, build a token sequence where:
-        * nonzero delta times are appended as-is (0..127),
-        * chords are encoded as (note/chord + 384),
-        * note events are encoded as two tokens: (pitch + 128) and (duration + 256).
-      The initial token of each sequence is 0 (start token).
+    Processing pipeline
+    -------------------
+    1. Load the MIDI file as a single-track millisecond score (MIDI
+       signature checking is skipped).
+    2. Extract enhanced score notes via ``TMIDIX.advanced_score_processor``
+       with sustain pedal applied.
+    3. Augment (normalize) timings to 32 ms ticks (``timings_divider=32``).
+    4. If ``clean_midi`` is True, discard every note not played by a "clean"
+       instrument (``TMIDIX.CLEAN_INSTRUMENTS``).
+    5. Convert to solo piano (``TMIDIX.solo_piano_escore_notes``), remove
+       duplicate pitches, and trim note durations to remove overlaps
+       (``fix_escore_notes_durations`` with ``min_notes_gap=0``).
+    6. If ``1 <= transpose_to_pitch <= 127``, transpose the score so that
+       its average pitch matches this target
+       (``TMIDIX.transpose_escore_notes_to_pitch``).
+    7. Clamp ``transpose_factor`` to 0..6. For each transposition ``tv`` in
+       ``range(-transpose_factor, transpose_factor)`` (just ``[0]`` when the
+       factor is 0):
+       a. Transpose the score by ``tv`` semitones.
+       b. Chordify (``TMIDIX.chordify_score``), sanitize each chord against
+          ``TMIDIX.ALL_CHORDS_SORTED`` (unrecognized pitch-class sets are
+          repaired via ``TMIDIX.check_and_fix_tones_chord`` and notes whose
+          pitch class is not in the final chord-tone set are dropped), then
+          re-chordify.
+       c. Encode the chords to tokens (see "Main token encoding").
+       d. Split the stream into bar-aligned chunks (``chunk_by_bars=True``)
+          or truncate it to ``max_seq_len`` tokens, and store it.
+    8. If ``return_drum_track`` is True, build a drum-track token sequence
+       from the channel-9 notes of the original enhanced score (step 2),
+       independently of the piano processing above (see "Drum-track
+       encoding").
+
+    Main token encoding
+    -------------------
+    Each chord contributes, in chronological order:
+    - Delta time token: time since the previous chord in 32 ms ticks,
+      clamped to 0..127. Always emitted (0 for the first chord).
+    - Bar token ``717`` (only if ``emit_bar_token``): emitted after the
+      delta token whenever the running time crosses into a new bar.
+    - Chord token (+384): pitch class + 384 (384..395) for single-note
+      chords; ``TMIDIX.ALL_CHORDS_SORTED`` index + 12 + 384 for multi-note
+      chords.
+    - For each note of the chord (in descending pitch order):
+      - Instrument token (only if ``emit_inst_tokens``): instrument clamped
+        to 0..128, + 846 (846..974; the top of the range covers drums).
+      - Pitch token: pitch clamped to 1..127, + 128 (129..255).
+      - Duration token: duration clamped to 1..127 ticks, + 256 (257..383).
+      - Velocity token (only if ``emit_vels_tokens``): velocity clamped to
+        1..127, + 718 (719..845).
+
+    One bar spans ``bar_time_ms // 32`` ticks (128 ticks = 4096 ms by
+    default, so a single clamped delta crosses at most one bar boundary).
+
+    Drum-track encoding (``return_drum_track=True``)
+    ------------------------------------------------
+    The sequence starts with the header ``[820, style_id + 768,
+    bpm_id + 788, 0]``, followed by, for each drum event: the delta time
+    (only when nonzero; raw, i.e. not clamped, in the drum score's own tick
+    units -- the drum score is re-augmented with the default timings
+    divider, not the main score's 32 ms ticks) and
+    ``[pitch + 256, duration + 384, velocity + 640]`` (raw). Before
+    encoding, drum notes are deduplicated, duration-fixed,
+    velocity-humanized when they use fewer than 4 distinct velocities, and
+    their average velocity is raised to 100 when it is below 80. The drum
+    score is an empty list if the file contains no drum notes or if drum
+    generation fails.
 
     Parameters
     ----------
     midi_file_path : str
-        Path to the MIDI file to process. The file is read by TMIDIX.midi2single_track_ms_score.
-    max_seq_len : int
-        Maximum output tokens sequence length (truncated to this value). Default is 3072
-    transpose_factor : int, optional
-        Maximum semitone transpose range. The value is clamped to the inclusive range 0..6.
-        If > 0, the function generates variants for transpositions in the integer range
-        [-transpose_factor, transpose_factor - 1]. If 0, only the original (no transpose)
-        variant is produced. Default is 6.
-    clean_midi : bool, optional
-        If True, only lead and base instruments will be processed, the rest will be discarted.
-        Default is True.
-    emit_bar_token : bool, optional
-        If True, the processor will emmit single bar token (717) before each bar delta start time.
-        WARNING: This option is disabled by default because it is not compatible with provided
-        midisimx models and embeddings.
-        Default is False.
-    emit_vels_tokens : bool, optional
-        If True, the processor will emit full velocity tokens range (718-846) after duration tokens.
-        WARNING: This option is disabled by default because it is not compatible with provided
-        midisimx models and embeddings.
-        Default is False.
-    emit_inst_tokens : bool, optional
-        If True, the processor will emit full instruments (846-973) + drums(974) tokens range (846-975)
-        before pitches tokens.
-        WARNING: This option is disabled by default because it is not compatible with provided
-        midisimx models and embeddings.
-        Default is False.
-    verbose : bool, optional
-        When True, prints concise progress messages and enables tqdm progress bars.
-        Progress bars use `tqdm(disable=not verbose)` so they are suppressed when verbose is False.
+        Path to the MIDI file to convert. Loaded with
+        ``TMIDIX.midi2single_track_ms_score``.
+    max_seq_len : int, default=3072
+        Maximum token length of each truncated sequence. Ignored when
+        ``chunk_by_bars`` is True.
+    transpose_factor : int, default=6
+        Semitone range of transposed variants, clamped to 0..6. If > 0, one
+        sequence is produced per ``tv`` in ``range(-transpose_factor,
+        transpose_factor)`` (e.g. 12 variants, tv = -6..5, for the default
+        of 6). If 0, only the untransposed score is encoded.
+    clean_midi : bool, default=True
+        If True, keep only notes played by "clean" instruments
+        (``TMIDIX.CLEAN_INSTRUMENTS``) and discard the rest.
+    bar_time_ms : int, default=4096
+        Duration of one bar in milliseconds, used for bar tokens and
+        bar-aligned chunking; internally measured in 32 ms ticks
+        (``bar_time_ms // 32`` ticks per bar). Values below 4096 allow a
+        single delta token to span more than one bar.
+    chunk_by_bars : bool, default=False
+        If True, each variant's stream is split into separate sequences at
+        bar boundaries (each chunk starts with the delta token that enters
+        a new bar) and ``max_seq_len`` is ignored. If False, each variant
+        yields a single sequence truncated to ``max_seq_len``.
+    emit_bar_token : bool, default=False
+        If True, emit the bar token (717) at every bar start.
+        WARNING: not compatible with the provided midisimx models and
+        embeddings.
+    emit_vels_tokens : bool, default=False
+        If True, emit a full-range velocity token (velocity + 718) after
+        each duration token.
+        WARNING: not compatible with the provided midisimx models and
+        embeddings.
+    emit_inst_tokens : bool, default=False
+        If True, emit an instrument token (instrument + 846, covering the
+        full instrument range plus drums) before each pitch token.
+        WARNING: not compatible with the provided midisimx models and
+        embeddings.
+    transpose_to_pitch : int, default=0
+        If 1..127, transpose the score so that its average pitch equals
+        this value before variant generation; 0 disables this step.
+    return_drum_track : bool, default=False
+        If True, also build and return a drum-track token sequence (see
+        "Drum-track encoding").
+    drum_track_style : str, default='pop'
+        Drum style used for the style token; matched case-insensitively
+        against the keys of ``drums_style_to_id`` (e.g. 'rock', 'jazz',
+        'funk'). Unknown or non-string values fall back to 'unknown'.
+    drum_track_bpm : int, default=120
+        Tempo used for the BPM token; clamped to 50..290. Should be one of
+        the exact keys of ``drums_bpm_to_id`` (50, 60, 65, ..., 290) --
+        any other integer makes drum generation fail (empty drum score).
+        Non-integer values fall back to the 'unknown' BPM token.
+    verbose : bool, default=True
+        If True, print progress messages and show tqdm progress bars. If
+        False, suppress all output and disable TMIDIX warnings.
 
     Returns
     -------
-    list[list[int]]
-        A list of token sequences. Each token sequence is a list of integers where:
-        - The first element is 0 (start token).
-        - Delta times (when nonzero) are appended as integers in 0..127.
-        - Note events are encoded as two integers: duration_token and pitch_token,
-          where duration_token = duration_clipped + 128 and pitch_token = pitch_clipped + 256.
-        The function returns an empty list if processing fails or no notes are found.
+    list[list[int]] or tuple[list[list[int]], list[int]]
+        Without ``return_drum_track``: a list of token sequences, one per
+        transpose variant (or one per bar-aligned chunk when
+        ``chunk_by_bars`` is True). With ``return_drum_track``: a tuple
+        ``(sequences, drum_score)`` where ``drum_score`` is the drum-track
+        token sequence (possibly empty). An empty result is returned if no
+        usable notes remain after any reduction stage. Note that in all
+        early-exit/failure cases the plain sequence list is returned,
+        without a drum score, even when ``return_drum_track`` is True.
 
-    Notes and assumptions
-    ---------------------
-    - The function expects TMIDIX to provide the following functions used internally:
-      midi2single_track_ms_score, advanced_score_processor, solo_piano_escore_notes,
-      recalculate_score_timings, augment_enhanced_score_notes, remove_duplicate_pitches_from_escore_notes,
-      fix_escore_notes_durations, delta_score_notes.
-    - Delta events `d` are assumed to be indexable sequences where:
-      d[1] is delta time, d[2] is duration, and d[4] is pitch (consistent with the original code).
-    - Timing values are clipped to 0..127; durations are clipped to 1..127; pitches are clipped to 1..127
-      after applying the transpose offset.
-    - The function intentionally uses small integer ranges to match downstream token vocabularies
-      that reserve offsets (e.g., +128, +256) for event encoding.
+    Error handling
+    --------------
+    All processing runs inside a try/except: on failure, a short error
+    message is printed (only when ``verbose``) and the token sequences
+    collected so far are returned. Exceptions inside drum-track generation
+    are caught separately and leave ``drum_score`` empty or partially
+    built.
 
-    Exceptions
-    ----------
-    - Any exception raised during processing is caught; the function prints a short error message
-      (only when verbose) and returns the token sequences collected so far (often an empty list).
+    Notes
+    -----
+    - Depends on the TMIDIX module and the module-level
+      ``drums_style_to_id`` / ``drums_bpm_to_id`` lookup tables.
+    - TMIDIX enhanced-score note layout assumed throughout: ``e[1]`` start
+      time, ``e[2]`` duration, ``e[3]`` channel, ``e[4]`` pitch, ``e[5]``
+      velocity, ``e[6]`` instrument.
+    - Main-sequence token ranges: 0..127 deltas; 129..255 pitches;
+      257..383 durations; 384..395 single-note chords; 396+ multi-note
+      chords; 717 bar; 719..845 velocities; 846..974 instruments.
+      Drum-sequence ranges: 820 start; 768..787 styles; 788..819 BPMs;
+      257..383 pitches; 385..511 durations; 641..767 velocities.
+    - Only full (non-chunked) sequences are guaranteed to start with the
+      initial delta token 0; every bar-aligned chunk other than the first
+      starts with the delta token that crosses into a new bar (followed by
+      717 when ``emit_bar_token`` is True).
 
     Example
     -------
-    >>> sequences = midi_to_tokens("example.mid", transpose_factor=2, verbose=True)
-    >>> len(sequences)
-    4  # variants for tv in [-2, -1, 0, 1] when transpose_factor == 2
-
+    >>> seqs = midi_to_tokens("song.mid")
+    >>> len(seqs)                        # 12 variants, tv = -6..5 by default
+    12
+    >>> seqs, drums = midi_to_tokens("song.mid", return_drum_track=True,
+    ...                              drum_track_style='rock',
+    ...                              drum_track_bpm=120)
     """
     
     if not verbose:
@@ -864,6 +961,9 @@ def midi_to_tokens(midi_file_path: str,
 
         escore_notes = TMIDIX.fix_escore_notes_durations(escore_notes, min_notes_gap=0)
         
+        if 0 < transpose_to_pitch < 128:
+            escore_notes = TMIDIX.transpose_escore_notes_to_pitch(escore_notes, transpose_to_pitch)
+        
         # Clamp transpose_factor to allowed range
         transpose_factor = max(0, min(6, transpose_factor))
             
@@ -906,19 +1006,24 @@ def midi_to_tokens(midi_file_path: str,
             cscore = TMIDIX.chordify_score([1000, fixed_score])
 
             score = []
-            
+            dtime = 0
             abs_time = 0
             pbar = -1
+            bar_div = max(1, max(1, bar_time_ms) // 32)
 
             pc = cscore[0]
 
             for c in cscore:
                 c.sort(key=lambda x: -x[4])
                 
-                if abs_time // 128 > pbar:
+                dtime = max(0, min(127, c[0][1]-pc[0][1]))
+                score.append(dtime)
+                abs_time += dtime
+                
+                if abs_time // bar_div > pbar:
                     if emit_bar_token:
                         score.append(717) # Single bar token (717)
-                    pbar = abs_time // 128
+                    pbar = abs_time // bar_div
 
                 tones_chord = sorted(set([p[4] % 12 for p in c]))
 
@@ -928,12 +1033,7 @@ def midi_to_tokens(midi_file_path: str,
                 else:
                     chord_tok = tones_chord[0]
 
-                dtime = max(0, min(127, c[0][1]-pc[0][1]))
-                score.append(dtime)
-
                 score.append(chord_tok+384)
-                
-                abs_time += dtime
 
                 for e in c:
                     if emit_inst_tokens:
@@ -945,57 +1045,93 @@ def midi_to_tokens(midi_file_path: str,
                         score.append(max(1, min(127, e[5]))+718) # 718 -> 846 --- full velocities range (128)
 
                 pc = c
-
-            if verbose:
-                print(f"Variant tv={tv} produced sequence length {len(score[:max_seq_len])}.")
                 
-            all_toks_sequences.append(score[:max_seq_len])
+            if chunk_by_bars:
+                chu_sco = []
+                abs_time = 0
+                pbar = -1
+                ccount = 0
+                
+                for t in score:
+                    if t < 128:
+                        abs_time += t
+
+                    if abs_time // bar_div > pbar:
+                        if chu_sco:
+                            all_toks_sequences.append(chu_sco)
+                            ccount += 1
+                            chu_sco = []
+                            
+                        pbar = abs_time // bar_div    
+                    
+                    chu_sco.append(t)
+                        
+                if chu_sco:
+                    all_toks_sequences.append(chu_sco)
+                    ccount += 1
+                    
+                if verbose:
+                    print(f"Variant tv={tv} produced {ccount} sequence chunks.")
             
+            else:
+                all_toks_sequences.append(score[:max_seq_len])
+
+                if verbose:
+                    print(f"Variant tv={tv} produced sequence length {len(score[:max_seq_len])}.")
+
         if return_drum_track:
             
-            if type(drum_track_style) == str:
-                drum_track_style_checked = drum_track_style.strip().lower() if drum_track_style.strip().lower() in drums_style_to_id else 'unknown'
+            try:
+            
+                if type(drum_track_style) == str:
+                    drum_track_style_checked = drum_track_style.strip().lower() if drum_track_style.strip().lower() in drums_style_to_id else 'unknown'
+                    
+                else:
+                    drum_track_style_checked = 'unknown'
+                drum_track_style_id = drums_style_to_id[drum_track_style_checked]
+
+                drum_track_bpm_checked = max(50, min(290, int(drum_track_bpm))) if type(drum_track_bpm) == int else 'unknown'
+                drum_track_bpm_id = drums_bpm_to_id[drum_track_bpm_checked]
                 
-            else:
-                drum_track_style_checked = 'unknown'
-            drum_track_style_id = drums_style_to_id[drum_track_style_checked]
+                escore_notes = [e for e in TMIDIX.augment_enhanced_score_notes(escore[0], sort_drums_last=True) if e[3] == 9]
+                
+                drum_score: list[int] = []
+                
+                if escore_notes:
+                
+                    escore_notes = TMIDIX.remove_duplicate_pitches_from_escore_notes(escore_notes)
 
-            drum_track_bpm_checked = max(50, min(290, int(drum_track_bpm))) if type(drum_track_bpm) == int else 'unknown'
-            drum_track_bpm_id = drums_bpm_to_id[drum_track_bpm_checked]
-            
-            escore_notes = [e for e in TMIDIX.augment_enhanced_score_notes(escore[0], sort_drums_last=True) if e[3] == 9]
-            
-            drum_score: list[int] = []
-            
-            if escore_notes:
-            
-                escore_notes = TMIDIX.remove_duplicate_pitches_from_escore_notes(escore_notes)
+                    fixed_score = TMIDIX.fix_escore_notes_durations(escore_notes, min_notes_gap=0)
 
-                fixed_score = TMIDIX.fix_escore_notes_durations(escore_notes, min_notes_gap=0)
+                    vels = [e[5] for e in fixed_score]
+                    avg_vel = sum(vels) / len(vels)
 
-                vels = [e[5] for e in fixed_score]
-                avg_vel = sum(vels) / len(vels)
+                    if len(set(vels)) < 4:
+                        fixed_score = TMIDIX.humanize_velocities_in_escore_notes(fixed_score)
 
-                if len(set(vels)) < 4:
-                    fixed_score = TMIDIX.humanize_velocities_in_escore_notes(fixed_score)
+                    if avg_vel < 80:
+                        TMIDIX.adjust_score_velocities(fixed_score, 100)
 
-                if avg_vel < 80:
-                    TMIDIX.adjust_score_velocities(fixed_score, 100)
+                    dscore = TMIDIX.delta_score_notes(fixed_score)
 
-                dscore = TMIDIX.delta_score_notes(fixed_score)
+                    drum_score = [820, drum_track_style_id+768, drum_track_bpm_id+788, 0] # 821
 
-                drum_score = [820, drum_track_style_id+768, drum_track_bpm_id+788, 0] # 821
+                    for e in dscore:
+                        if e[1] != 0:
+                            drum_score.append(e[1])
 
-                for e in dscore:
-                    if e[1] != 0:
-                        drum_score.append(e[1])
+                        drum_score.extend([e[4]+256, e[2]+384, e[5]+640]) # 768
+                        
+            except Exception as ex:
+                if verbose:
+                    print("Exception while converting MIDI to drum tokens sequences!")
+                    print(f"File: {midi_file_path}")
+                    print(f"Error: {ex}")
 
-                    drum_score.extend([e[4]+256, e[2]+384, e[5]+640]) # 768
-
-            if verbose:
-                print('=' * 70)
-                print(f"Finished processing. Produced {len(all_toks_sequences)} token sequence(s).")
-                print('=' * 70)
+        if verbose:
+            print('=' * 70)
+            print(f"Finished processing. Produced {len(all_toks_sequences)} token sequence(s).")
+            print('=' * 70)
             
         if return_drum_track:
             return all_toks_sequences, drum_score
@@ -1003,9 +1139,10 @@ def midi_to_tokens(midi_file_path: str,
         return all_toks_sequences
 
     except Exception as ex:
-        print("Exception while converting MIDI to token sequences!")
-        print(f"File: {midi_file_path}")
-        print(f"Error: {ex}")
+        if verbose:
+            print("Exception while converting MIDI to token sequences!")
+            print(f"File: {midi_file_path}")
+            print(f"Error: {ex}")
             
         return all_toks_sequences
 
