@@ -760,13 +760,13 @@ def midi_to_tokens(midi_file_path: str,
     Main token encoding
     -------------------
     Each chord contributes, in chronological order:
-    - Delta time token: time since the previous chord in 32 ms ticks,
-      clamped to 0..127. Always emitted (0 for the first chord).
-    - Bar token ``717`` (only if ``emit_bar_token``): emitted after the
-      delta token whenever the running time crosses into a new bar.
     - Chord token (+384): pitch class + 384 (384..395) for single-note
       chords; ``TMIDIX.ALL_CHORDS_SORTED`` index + 12 + 384 for multi-note
       chords.
+    - Delta time token: time since the previous chord in 32 ms ticks,
+      clamped to 0..127. Always emitted (0 for the first chord).
+    - Bar token ``717`` (only if ``emit_bar_token``): emitted before the
+      chord token whenever the running time crosses into a new bar.
     - For each note of the chord (in descending pitch order):
       - Instrument token (only if ``emit_inst_tokens``): instrument clamped
         to 0..128, + 846 (846..974; the top of the range covers drums).
@@ -815,7 +815,7 @@ def midi_to_tokens(midi_file_path: str,
         single delta token to span more than one bar.
     chunk_by_bars : bool, default=False
         If True, each variant's stream is split into separate sequences at
-        bar boundaries (each chunk starts with the delta token that enters
+        bar boundaries (each chunk starts with the chord token that enters
         a new bar) and ``max_seq_len`` is ignored. If False, each variant
         yields a single sequence truncated to ``max_seq_len``.
     emit_bar_token : bool, default=False
@@ -1017,7 +1017,6 @@ def midi_to_tokens(midi_file_path: str,
                 c.sort(key=lambda x: -x[4])
                 
                 dtime = max(0, min(127, c[0][1]-pc[0][1]))
-                score.append(dtime)
                 abs_time += dtime
                 
                 if abs_time // bar_div > pbar:
@@ -1034,6 +1033,8 @@ def midi_to_tokens(midi_file_path: str,
                     chord_tok = tones_chord[0]
 
                 score.append(chord_tok+384)
+                
+                score.append(dtime)
 
                 for e in c:
                     if emit_inst_tokens:
@@ -1052,13 +1053,14 @@ def midi_to_tokens(midi_file_path: str,
                 pbar = -1
                 ccount = 0
                 
-                for t in score:
+                for t in score:                    
                     if t < 128:
                         abs_time += t
 
-                    if abs_time // bar_div > pbar:
+                    if 384 <= t <= 717 and abs_time // bar_div > pbar:
                         if chu_sco:
                             all_toks_sequences.append(chu_sco)
+
                             ccount += 1
                             chu_sco = []
                             
